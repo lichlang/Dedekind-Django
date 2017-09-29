@@ -39,9 +39,10 @@ def logout_view(request):
 @login_required
 def index(request):
     usr = request.user
-    sua_list = []
-    sa_list = []
-    gsap_list = []
+    sua_list = []  # 公益时记录
+    sa_list = []  # 公益时申请
+    appeals_list = []  # 申诉记录
+    gsap_list = []  # 活动记录
     if hasattr(usr, 'student'):
         stu = usr.student
         name = stu.name
@@ -56,6 +57,12 @@ def index(request):
             if hasattr(sua, 'sua_application'):
                 i += 1
                 sa_list.append((i, sua.sua_application))
+        # 获取申诉列表
+        i = 0
+        for appeal in stu.appeal_set.order_by('-date'):
+            i += 1
+            appeals_list.append((i, appeal))
+
     else:
         if usr.is_staff:
             name = 'Admin.' + usr.username
@@ -88,6 +95,7 @@ def index(request):
         'stu_suahours': suahours,
         'sua_list': sua_list,
         'sa_list': sa_list,
+        'ap_list': appeals_list,
         'gsap_list': gsap_list,
     })
 
