@@ -138,7 +138,7 @@ class Appeal(models.Model):
     sua = models.ForeignKey(Sua, on_delete=models.CASCADE, null=True, blank=True)
     gsua = models.ForeignKey(GSua, on_delete=models.CASCADE, null=True, blank=True)
     claim = models.CharField(max_length=400)
-    reason = models.CharField(max_length=400)
+    reason = models.CharField(max_length=400, blank=True)
     is_passed = models.BooleanField(default=False)
     is_checked = models.BooleanField(default=False)
     feedback = models.CharField(max_length=400, blank=True)
