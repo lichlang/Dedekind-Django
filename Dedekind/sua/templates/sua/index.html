@@ -102,7 +102,7 @@
                                                 <p>公告截止日期:{{gsapc.0.published_end_date}}</p>
                                             </div>
                                             <div class="col-xs-3">
-                                                <a href="#" class="btn btn-default btn-sm active" role="button">提出申诉</a>
+                                                <a href="{% url 'sua:appeal_for' %}?gsua_id={{ gsapc.0.pk }}" class="btn btn-default btn-sm active" role="button">提出申诉</a>
                                             </div>
                                         </div>
                                         </div>

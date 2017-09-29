@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from .forms import LoginForm, SuaForm, Sua_ApplicationForm, ProofForm
-from .models import Proof, Sua_Application, GSuaPublicity
+from .models import Proof, Sua_Application, GSuaPublicity, GSua
 
 
 def login_view(request):
@@ -87,7 +87,6 @@ def index(request):
             if sua.suahours not in teams[sua.team]:
                 teams[sua.team][sua.suahours] = []
             teams[sua.team][sua.suahours].append(sua.student.name)
-        print(teams)
         gsap_list.append((gsap, teams))
     return render(request, 'sua/index.html', {
         'stu_name': name,
@@ -186,6 +185,97 @@ def apply_sua(request):
         'proofForm': proofForm,
         'suaForm': suaForm,
         'sua_ApplicationForm': sua_ApplicationForm,
+    })
+
+
+@login_required
+def appeal_for(request):
+    usr = request.user
+    stu = None
+    gsua = GSua.objects.get(pk=int(request.GET.get('gsua_id')))
+    if hasattr(usr, 'student'):
+        stu = usr.student
+        name = stu.name
+        number = stu.number
+    else:
+        if usr.is_staff:
+            name = 'Admin.' + usr.username
+        else:
+            name = 'NoStuInfo.' + usr.username
+        number = '------'
+    date = timezone.now()
+    year = date.year
+    month = date.month
+    if month < 9:
+        year_before = year - 1
+        year_after = year
+    else:
+        year_before = year
+        year_after = year + 1
+    # 表单处理
+    if request.method == 'POST':
+        print(gsua)
+        suaForm = SuaForm(request.POST, prefix='suaForm')
+        proofForm = ProofForm(request.POST, request.FILES, prefix='proofForm')
+        sua_ApplicationForm = Sua_ApplicationForm(
+            request.POST,
+            prefix='sua_ApplicationForm',
+        )
+        if suaForm.is_valid() and\
+                proofForm.is_valid() and\
+                sua_ApplicationForm.is_valid() and\
+                stu is not None:
+            # 生成Models
+            if proofForm.cleaned_data['is_offline']:
+                offlineProofSet = Proof.objects.filter(is_offline=True)
+                if offlineProofSet.count == 0:
+                    assert(User.objects.filter(is_superuser=True).count != 0)
+                    proof = Proof.objects.create(
+                        user=User.objects.filter(is_superuser=True)[0],
+                        date=date,
+                        is_offline=True,
+                    )
+                    proof.save()
+                else:
+                    proof = offlineProofSet[0]
+            else:
+                proof = proofForm.save(commit=False)
+            sua = suaForm.save(commit=False)
+            sua_Application = sua_ApplicationForm.save(commit=False)
+            # 处理proof
+            if not proofForm.cleaned_data['is_offline']:
+                proof.user = usr
+                proof.date = date
+                proof.save()
+            # 处理sua
+            sua.student = stu
+            sua.last_time_suahours = 0.0
+            sua.is_valid = False
+            sua.save()
+            # 处理sua_Application
+            sua_Application.sua = sua
+            sua_Application.date = date
+            sua_Application.proof = proof
+            sua_Application.is_checked = False
+            sua_Application.save()
+            return HttpResponseRedirect('/')
+    else:
+        print(gsua)
+        suaForm = SuaForm(prefix='suaForm')
+        proofForm = ProofForm(prefix='proofForm')
+        sua_ApplicationForm = Sua_ApplicationForm(
+            prefix='sua_ApplicationForm',
+        )
+    return render(request, 'sua/appeal_for.html', {
+        'stu_name': name,
+        'stu_number': number,
+        'apply_date': date.date(),
+        'apply_year_before': year_before,
+        'apply_year_after': year_after,
+        'proofForm': proofForm,
+        'suaForm': suaForm,
+        'sua_ApplicationForm': sua_ApplicationForm,
+        'gsua': gsua,
     })
 
 
