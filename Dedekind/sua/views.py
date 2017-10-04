@@ -5,8 +5,8 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
-from .forms import LoginForm, SuaForm, Sua_ApplicationForm, ProofForm
-from .models import Proof, Sua_Application, GSuaPublicity
+from .forms import LoginForm, SuaForm, Sua_ApplicationForm, ProofForm, AppealForm
+from .models import Proof, Sua_Application, GSuaPublicity, GSua, Student, Appeal
 
 
 def login_view(request):
@@ -87,7 +87,6 @@ def index(request):
             if sua.suahours not in teams[sua.team]:
                 teams[sua.team][sua.suahours] = []
             teams[sua.team][sua.suahours].append(sua.student.name)
-        print(teams)
         gsap_list.append((gsap, teams))
     return render(request, 'sua/index.html', {
         'stu_name': name,
@@ -108,6 +107,7 @@ def apply_sua(request):
         stu = usr.student
         name = stu.name
         number = stu.number
+        suahours = stu.suahours
     else:
         if usr.is_staff:
             name = 'Admin.' + usr.username
@@ -180,12 +180,71 @@ def apply_sua(request):
     return render(request, 'sua/apply_sua.html', {
         'stu_name': name,
         'stu_number': number,
+        'stu_suahours': suahours,
         'apply_date': date.date(),
         'apply_year_before': year_before,
         'apply_year_after': year_after,
         'proofForm': proofForm,
         'suaForm': suaForm,
         'sua_ApplicationForm': sua_ApplicationForm,
+    })
+
+
+@login_required
+def appeal_for(request):
+    usr = request.user
+    stu = None
+    gsuap = GSuaPublicity.objects.get(pk=int(request.GET.get('gsuap_id')))
+    if hasattr(usr, 'student'):
+        stu = usr.student
+        name = stu.name
+        number = stu.number
+        suahours = stu.suahours
+    else:
+        if usr.is_staff:
+            name = 'Admin.' + usr.username
+        else:
+            name = 'NoStuInfo.' + usr.username
+        number = '------'
+    date = timezone.now()
+    year = date.year
+    month = date.month
+    if month < 9:
+        year_before = year - 1
+        year_after = year
+    else:
+        year_before = year
+        year_after = year + 1
+    # 表单处理
+    if request.method == 'POST':
+        print(gsuap)
+        appealForm = AppealForm(request.POST, prefix='appealForm')
+        if appealForm.is_valid() and\
+                stu is not None and\
+                gsuap is not None:
+            if date <= gsuap.published_end_date:
+                # 生成Models
+                appeal = appealForm.save(commit=False)
+                # 处理appeal
+                appeal.student = stu
+                appeal.date = date
+                appeal.gsua = gsuap.gsua
+                appeal.is_checked = False
+                appeal.feedback = ''
+                appeal.save()
+                return HttpResponseRedirect('/')
+    else:
+        print(gsuap)
+        appealForm = AppealForm(prefix='appealForm')
+    return render(request, 'sua/appeal_for.html', {
+        'stu_name': name,
+        'stu_number': number,
+        'stu_suahours': suahours,
+        'appealYearBefore': year_before,
+        'appealYearAfter': year_after,
+        'appealDate': date.date(),
+        'appealForm': appealForm,
+        'gsuap': gsuap,
     })
 
 
@@ -203,6 +262,20 @@ class ApplicationDetailView(generic.DetailView):
     def get_context_data(self, **kwargs):
         context = super(ApplicationDetailView, self).get_context_data(**kwargs)
         sa = self.get_object()
+        usr = self.request.user
+        stu = None
+        suahours = 0
+        if hasattr(usr, 'student'):
+            stu = usr.student
+            name = stu.name
+            number = stu.number
+            suahours = stu.suahours
+        else:
+            if usr.is_staff:
+                name = 'Admin.' + usr.username
+            else:
+                name = 'NoStuInfo.' + usr.username
+            number = '------'
         year = sa.date.year
         month = sa.date.month
         if month < 9:
@@ -214,4 +287,41 @@ class ApplicationDetailView(generic.DetailView):
         print(context)
         context['year_before'] = year_before
         context['year_after'] = year_after
+        context['stu_name'] = name
+        context['stu_number'] = number
+        context['stu_suahours'] = suahours
         return context
+
+
+@login_required
+def adminIndex(request):
+    usr = request.user
+    if not usr.is_staff:
+        return HttpResponseRedirect('/')
+    else:
+        students = []  # 全体学生
+        gsuaps = []  # 全体活动公示
+        appeals = []  # 全体申诉
+
+        # 获取全体学生
+        i = 0
+        for stu in Student.objects.order_by('number'):
+            i += 1
+            students.append((i, stu))
+        # 获取全体活动公示
+        i = 0
+        for gsuap in GSuaPublicity.objects.order_by('-published_begin_date'):
+            i += 1
+            gsuaps.append((i, gsuap))
+        # 获取全体申诉
+        i = 0
+        for appeal in Appeal.objects.order_by('-date'):
+            i += 1
+            appeals.append((i, appeal))
+
+        # 返回render
+        return render(request, 'sua/admin_index.html', {
+            'students': students,
+            'gsuaps': gsuaps,
+            'appeals': appeals,
+        })

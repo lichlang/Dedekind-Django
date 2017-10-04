@@ -2,7 +2,7 @@ from django import forms
 from django.forms import ModelForm
 from django.forms.extras.widgets import SelectDateWidget
 from django.contrib.admin.widgets import AdminDateWidget
-from sua.models import Sua, Sua_Application, Proof, Student
+from sua.models import Sua, Sua_Application, Proof, Student, Appeal
 
 
 class LoginForm(forms.Form):
@@ -77,4 +77,19 @@ class Sua_ApplicationForm(ModelForm):
                 'class': 'form-control',
                 'placeholder': '请输入联系方式',
             })
+        }
+
+
+class AppealForm(ModelForm):
+    class Meta:
+        model = Appeal
+        fields = [
+            'claim',
+        ]
+        widgets = {
+            'claim': forms.Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': '请输入申诉内容',
+                'cols': 20,
+            }),
         }
