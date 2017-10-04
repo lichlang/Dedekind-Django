@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from .forms import LoginForm, SuaForm, Sua_ApplicationForm, ProofForm, AppealForm
-from .models import Proof, Sua_Application, GSuaPublicity, GSua
+from .models import Proof, Sua_Application, GSuaPublicity, GSua, Student, Appeal
 
 
 def login_view(request):
@@ -296,61 +296,32 @@ class ApplicationDetailView(generic.DetailView):
 @login_required
 def adminIndex(request):
     usr = request.user
-    sua_list = []  # 公益时记录
-    sa_list = []  # 公益时申请
-    appeals_list = []  # 申诉记录
-    gsap_list = []  # 活动记录
-    if hasattr(usr, 'student'):
-        stu = usr.student
-        name = stu.name
-        number = stu.number
-        suahours = stu.suahours
-        i = 0
-        for sua in stu.sua_set.filter(is_valid=True).order_by('-date'):
-            i += 1
-            sua_list.append((i, sua))
-        i = 0
-        for sua in stu.sua_set.order_by('-sua_application__date'):
-            if hasattr(sua, 'sua_application'):
-                i += 1
-                sa_list.append((i, sua.sua_application))
-        # 获取申诉列表
-        i = 0
-        for appeal in stu.appeal_set.order_by('-date'):
-            i += 1
-            appeals_list.append((i, appeal))
-
+    if not usr.is_staff:
+        return HttpResponseRedirect('/')
     else:
-        if usr.is_staff:
-            name = 'Admin.' + usr.username
-        else:
-            name = 'NoStuInfo.' + usr.username
-        number = '------'
-        suahours = '-.-'
-    # 组织公益时活动的公示
-    gsaps = GSuaPublicity.objects.filter(
-        is_published=True,
-        published_begin_date__lte=timezone.now(),
-        published_end_date__gt=timezone.now()
-    )
-    for gsap in gsaps:
-        teams = dict()
-        suass = gsap.gsua.suas.order_by('team', 'suahours', 'student__name')
+        students = []  # 全体学生
+        gsuaps = []  # 全体活动公示
+        appeals = []  # 全体申诉
+
+        # 获取全体学生
         i = 0
-        for sua in suass:
+        for stu in Student.objects.order_by('number'):
             i += 1
-            if sua.team not in teams:
-                teams[sua.team] = dict()
-            if sua.suahours not in teams[sua.team]:
-                teams[sua.team][sua.suahours] = []
-            teams[sua.team][sua.suahours].append(sua.student.name)
-        gsap_list.append((gsap, teams))
-    return render(request, 'sua/admin_index.html', {
-        'stu_name': name,
-        'stu_number': number,
-        'stu_suahours': suahours,
-        'sua_list': sua_list,
-        'sa_list': sa_list,
-        'ap_list': appeals_list,
-        'gsap_list': gsap_list,
-    })
+            students.append((i, stu))
+        # 获取全体活动公示
+        i = 0
+        for gsuap in GSuaPublicity.objects.order_by('-published_begin_date'):
+            i += 1
+            gsuaps.append((i, gsuap))
+        # 获取全体申诉
+        i = 0
+        for appeal in Appeal.objects.order_by('-date'):
+            i += 1
+            appeals.append((i, appeal))
+
+        # 返回render
+        return render(request, 'sua/admin_index.html', {
+            'students': students,
+            'gsuaps': gsuaps,
+            'appeals': appeals,
+        })
