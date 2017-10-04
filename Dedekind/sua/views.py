@@ -107,6 +107,7 @@ def apply_sua(request):
         stu = usr.student
         name = stu.name
         number = stu.number
+        suahours = stu.suahours
     else:
         if usr.is_staff:
             name = 'Admin.' + usr.username
@@ -179,6 +180,7 @@ def apply_sua(request):
     return render(request, 'sua/apply_sua.html', {
         'stu_name': name,
         'stu_number': number,
+        'stu_suahours': suahours,
         'apply_date': date.date(),
         'apply_year_before': year_before,
         'apply_year_after': year_after,
@@ -197,6 +199,7 @@ def appeal_for(request):
         stu = usr.student
         name = stu.name
         number = stu.number
+        suahours = stu.suahours
     else:
         if usr.is_staff:
             name = 'Admin.' + usr.username
@@ -236,6 +239,7 @@ def appeal_for(request):
     return render(request, 'sua/appeal_for.html', {
         'stu_name': name,
         'stu_number': number,
+        'stu_suahours': suahours,
         'appealYearBefore': year_before,
         'appealYearAfter': year_after,
         'appealDate': date.date(),
@@ -258,6 +262,20 @@ class ApplicationDetailView(generic.DetailView):
     def get_context_data(self, **kwargs):
         context = super(ApplicationDetailView, self).get_context_data(**kwargs)
         sa = self.get_object()
+        usr = self.request.user
+        stu = None
+        suahours = 0
+        if hasattr(usr, 'student'):
+            stu = usr.student
+            name = stu.name
+            number = stu.number
+            suahours = stu.suahours
+        else:
+            if usr.is_staff:
+                name = 'Admin.' + usr.username
+            else:
+                name = 'NoStuInfo.' + usr.username
+            number = '------'
         year = sa.date.year
         month = sa.date.month
         if month < 9:
@@ -269,6 +287,9 @@ class ApplicationDetailView(generic.DetailView):
         print(context)
         context['year_before'] = year_before
         context['year_after'] = year_after
+        context['stu_name'] = name
+        context['stu_number'] = number
+        context['stu_suahours'] = suahours
         return context
 
 
