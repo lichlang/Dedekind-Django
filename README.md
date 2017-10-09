@@ -7,7 +7,7 @@
 ## 开发进程
 ### 个人页面
 1. Sua（公益时记录）
-  * 查看 **done**
+  * 查看 **DONE**
 2. Sua Application （公益时申请表）
   * 创建 **DONE**
   * 查看 **DONE**
