@@ -1,12 +1,60 @@
 from django.views import generic
+from django.db.models.query import QuerySet
+from django.core import serializers
 from django.shortcuts import render
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from .forms import LoginForm, SuaForm, Sua_ApplicationForm, ProofForm, AppealForm
 from .models import Proof, Sua_Application, GSuaPublicity, GSua, Student, Appeal
+import json
+
+
+class JSONResponseMixin(object):
+    """
+    用于返回JSON响应的Mixin
+    """
+    def render_to_json_response(self, context, **response_kwargs):
+        return JsonResponse(
+            self.get_data(context),
+            **response_kwargs
+        )
+
+    def get_data(self, context):
+        msg = {}
+        data = {}
+        if context['msg'] is not None:
+            for k, v in context['msg'].items():
+                msg[k] = json.loads(serializers.serialize("json", v))
+        else:
+            msg = None
+        data['res'] = context['res']
+        data['msg'] = msg
+        return data
+
+
+class JSONListView(JSONResponseMixin, generic.list.BaseListView):
+    def render_to_response(self, context, **response_kwargs):
+        return self.render_to_json_response(context, **response_kwargs)
+
+
+class JSONStudentListView(JSONListView):
+    def get_queryset(self):
+        return Student.objects.order_by('number')
+
+    def get_context_data(self, **kwargs):
+        context = super(JSONStudentListView, self).get_context_data(**kwargs)
+        usr = self.request.user
+        json_context = {}
+        if usr.is_superuser:
+            json_context['res'] = "success"
+            json_context['msg'] = {'student_list': context['object_list']}
+        else:
+            json_context['res'] = "failure"
+            json_context['msg'] = None
+        return json_context
 
 
 def login_view(request):
