@@ -22,8 +22,13 @@ urlpatterns = [
         name='data_StudentList',
     ),
     url(
-        r'^data/Student/(?P<pk>[0-9]+)/$',
-        login_required(views.JSONStudentDetailView.as_view()),
+        r'^data/StudentSuaList/([0-9]+)/$',
+        login_required(views.JSONStudentSuaListView.as_view()),
+        name='data_StudentList',
+    ),
+    url(
+        r'^Student/(?P<pk>[0-9]+)/$',
+        login_required(views.StudentDetailView.as_view()),
         name='data_Student',
     ),
 ]

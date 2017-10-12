@@ -1,14 +1,14 @@
 from django.views import generic
 from django.db.models.query import QuerySet
 from django.core import serializers
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from .forms import LoginForm, SuaForm, Sua_ApplicationForm, ProofForm, AppealForm
-from .models import Proof, Sua_Application, GSuaPublicity, GSua, Student, Appeal
+from .models import Sua, Proof, Sua_Application, GSuaPublicity, GSua, Student, Appeal
 import json
 
 
@@ -40,6 +40,24 @@ class JSONListView(JSONResponseMixin, generic.list.BaseListView):
         return self.render_to_json_response(context, **response_kwargs)
 
 
+class JSONStudentSuaListView(JSONListView):
+    def get_queryset(self):
+        self.student = get_object_or_404(Student, pk=self.args[0])
+        return Sua.objects.filter(student=self.student)
+
+    def get_context_data(self, **kwargs):
+        context = super(JSONStudentSuaListView, self).get_context_data(**kwargs)
+        usr = self.request.user
+        json_context = {}
+        if usr.is_superuser:
+            json_context['res'] = "success"
+            json_context['msg'] = {'sua_list': context['object_list']}
+        else:
+            json_context['res'] = "failure"
+            json_context['msg'] = None
+        return json_context
+
+
 class JSONStudentListView(JSONListView):
     def get_queryset(self):
         return Student.objects.order_by('number')
@@ -55,6 +73,51 @@ class JSONStudentListView(JSONListView):
             json_context['res'] = "failure"
             json_context['msg'] = None
         return json_context
+
+
+class StudentDetailView(generic.DetailView):
+    model = Sua_Application
+    template_name = 'sua/application_detail.html'
+    context_object_name = 'sa'
+
+    def get_queryset(self):
+        user = self.request.user
+        return Sua_Application.objects.filter(
+            sua__student__user=user
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super(ApplicationDetailView, self).get_context_data(**kwargs)
+        sa = self.get_object()
+        usr = self.request.user
+        stu = None
+        suahours = 0
+        if hasattr(usr, 'student'):
+            stu = usr.student
+            name = stu.name
+            number = stu.number
+            suahours = stu.suahours
+        else:
+            if usr.is_staff:
+                name = 'Admin.' + usr.username
+            else:
+                name = 'NoStuInfo.' + usr.username
+            number = '------'
+        year = sa.date.year
+        month = sa.date.month
+        if month < 9:
+            year_before = year - 1
+            year_after = year
+        else:
+            year_before = year
+            year_after = year + 1
+        print(context)
+        context['year_before'] = year_before
+        context['year_after'] = year_after
+        context['stu_name'] = name
+        context['stu_number'] = number
+        context['stu_suahours'] = suahours
+        return context
 
 
 def login_view(request):
