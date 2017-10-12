@@ -1,4 +1,5 @@
 from django.db import models
+from django.urls import reverse
 from django.contrib.auth.models import User, Group
 from django.utils.translation import ugettext as _
 from sua.storage import FileStorage
@@ -27,6 +28,9 @@ class Student(models.Model):
 
     def __str__(self):
         return self.name
+
+    def get_absolute_url(self):
+        return reverse('sua:Student-Detail', kwargs={'pk': self.pk})
 
 
 class SuaGroup(models.Model):

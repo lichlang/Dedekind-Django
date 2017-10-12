@@ -66,9 +66,8 @@
                     <div class="row"><div class="col-lg-12">
 
                       <!-- 这个部分用来展示后台提供的数据 -->
-                        <p>{{ students }}</p>  <!-- 全体学生(student)列表 -->
-                        <p>{{ gsuaps }}</p>  <!-- 全体公示(gsuap)列表（gsuap.gsua就是公示对应的gsua) -->
-                        <p>{{ appeals }}</p>  <!-- 全体申诉(appeal)列表 -->
+                        <p>{{ student }}</p>  <!-- 用户信息(Student) -->
+                        <p><a href={% url 'sua:data_StudentSuaList' student.pk %}>StudentSuaList API</a></p>
                       <!-- 本页面完成时记得删掉这部分代码哟 -->
 
                         {% for gsapc in gsap_list %}

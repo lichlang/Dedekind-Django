@@ -1,5 +1,6 @@
 from django.views import generic
 from django.db.models.query import QuerySet
+from django.urls import reverse_lazy
 from django.core import serializers
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
@@ -41,6 +42,10 @@ class JSONListView(JSONResponseMixin, generic.list.BaseListView):
 
 
 class JSONStudentSuaListView(JSONListView):
+    def is_itself(self):
+        usr = self.request.user
+        return hasattr(usr, 'student') and usr.student == self.student
+
     def get_queryset(self):
         self.student = get_object_or_404(Student, pk=self.args[0])
         return Sua.objects.filter(student=self.student)
@@ -49,7 +54,7 @@ class JSONStudentSuaListView(JSONListView):
         context = super(JSONStudentSuaListView, self).get_context_data(**kwargs)
         usr = self.request.user
         json_context = {}
-        if usr.is_superuser:
+        if usr.is_superuser or self.is_itself():
             json_context['res'] = "success"
             json_context['msg'] = {'sua_list': context['object_list']}
         else:
@@ -77,47 +82,32 @@ class JSONStudentListView(JSONListView):
 
 class StudentDetailView(generic.DetailView):
     model = Sua_Application
-    template_name = 'sua/application_detail.html'
-    context_object_name = 'sa'
+    template_name = 'sua/admin_student_detail.html'
+    context_object_name = 'student'
 
     def get_queryset(self):
-        user = self.request.user
-        return Sua_Application.objects.filter(
-            sua__student__user=user
-        )
+        return Student.objects.all()
 
     def get_context_data(self, **kwargs):
-        context = super(ApplicationDetailView, self).get_context_data(**kwargs)
-        sa = self.get_object()
+        context = super(StudentDetailView, self).get_context_data(**kwargs)
+        stu = self.get_object()
         usr = self.request.user
-        stu = None
-        suahours = 0
-        if hasattr(usr, 'student'):
-            stu = usr.student
-            name = stu.name
-            number = stu.number
-            suahours = stu.suahours
-        else:
-            if usr.is_staff:
-                name = 'Admin.' + usr.username
-            else:
-                name = 'NoStuInfo.' + usr.username
-            number = '------'
-        year = sa.date.year
-        month = sa.date.month
-        if month < 9:
-            year_before = year - 1
-            year_after = year
-        else:
-            year_before = year
-            year_after = year + 1
-        print(context)
-        context['year_before'] = year_before
-        context['year_after'] = year_after
-        context['stu_name'] = name
-        context['stu_number'] = number
-        context['stu_suahours'] = suahours
         return context
+
+
+class StudentCreate(generic.edit.CreateView):
+    model = Student
+    fields = ['name', 'number', 'suahours']
+
+
+class StudentUpdate(generic.edit.UpdateView):
+    model = Student
+    fields = ['name', 'number', 'suahours']
+
+
+class StudentDelete(generic.edit.DeleteView):
+    model = Student
+    success_url = reverse_lazy('sua:admin-index')
 
 
 def login_view(request):
