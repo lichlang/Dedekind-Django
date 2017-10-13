@@ -30,7 +30,7 @@ class Student(models.Model):
         return self.name
 
     def get_absolute_url(self):
-        return reverse('sua:Student-Detail', kwargs={'pk': self.pk})
+        return reverse('sua:student-detail', kwargs={'pk': self.pk})
 
 
 class SuaGroup(models.Model):

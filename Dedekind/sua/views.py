@@ -82,7 +82,7 @@ class JSONStudentListView(JSONListView):
 
 class StudentDetailView(generic.DetailView):
     model = Sua_Application
-    template_name = 'sua/admin_student_detail.html'
+    template_name = 'sua/student_detail.html'
     context_object_name = 'student'
 
     def get_queryset(self):

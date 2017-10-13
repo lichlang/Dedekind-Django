@@ -67,7 +67,7 @@
 
                       <!-- 这个部分用来展示后台提供的数据 -->
                         <p>{{ student }}</p>  <!-- 用户信息(Student) -->
-                        <p><a href={% url 'sua:data_StudentSuaList' student.pk %}>StudentSuaList API</a></p>
+                        <p><a href={% url 'sua:student-sualist-json' student.pk %}>StudentSuaList API</a></p>
                       <!-- 本页面完成时记得删掉这部分代码哟 -->
 
                         {% for gsapc in gsap_list %}
