@@ -17,6 +17,41 @@ class LoginForm(forms.Form):
     loginstatus = forms.BooleanField(required=False)
 
 
+class StudentForm(ModelForm):
+    initial_password = forms.CharField(widget=forms.TextInput(attrs={
+        'class': 'form-control',
+        'placeholder': '请输入新的初始密码',
+    }), required=False)
+
+    class Meta:
+        model = Student
+
+        fields = [
+            'number',
+            'name',
+            'grade',
+            'suahours',
+        ]
+        widgets = {
+            'number': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '请输入学生学号（这将会作为学生的用户名）',
+            }),
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '请输入学生姓名',
+            }),
+            'suahours': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '请输入学生当前的公益时数',
+            }),
+            'grade': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '请输入学生年级(如2017级)',
+            }),
+        }
+
+
 class SuaForm(ModelForm):
     class Meta:
         model = Sua

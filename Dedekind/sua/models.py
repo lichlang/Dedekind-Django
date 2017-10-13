@@ -18,7 +18,7 @@ class Student(models.Model):
         primary_key=True,
     )
     number = models.IntegerField(_("Student Number"))
-    suahours = models.FloatField()
+    suahours = models.FloatField(default=0)
     name = models.CharField(max_length=100)
     grade = models.IntegerField(
         _("Student Grade"),

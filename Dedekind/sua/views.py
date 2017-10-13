@@ -8,7 +8,8 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
-from .forms import LoginForm, SuaForm, Sua_ApplicationForm, ProofForm, AppealForm
+from django.contrib.auth.models import User, Group
+from .forms import LoginForm, SuaForm, Sua_ApplicationForm, ProofForm, AppealForm, StudentForm
 from .models import Sua, Proof, Sua_Application, GSuaPublicity, GSua, Student, Appeal
 import json
 
@@ -96,13 +97,39 @@ class StudentDetailView(generic.DetailView):
 
 
 class StudentCreate(generic.edit.CreateView):
-    model = Student
-    fields = ['name', 'number', 'suahours']
+    template_name = 'sua/student_form.html'
+    form_class = StudentForm
+
+    def form_valid(self, form):
+        username = form.cleaned_data['number']
+        password = form.cleaned_data['initial_password']
+        if password == '' or None:
+            password = '12345678'
+        user = User.objects.create_user(username=username, password=password)
+        user.save()
+        form.instance.user = user
+        return super(StudentCreate, self).form_valid(form)
 
 
-class StudentUpdate(generic.edit.UpdateView):
+class StudentUpdate(generic.edit.CreateView):
+    template_name = 'sua/student_form.html'
+    form_class = StudentForm
     model = Student
-    fields = ['name', 'number', 'suahours']
+
+    def form_valid(self, form):
+        user = get_object_or_404(User, pk=form.instance.pk)
+        username = form.cleaned_data['number']
+        password = form.cleaned_data['initial_password']
+        if not(password == '' or None):
+            user.password = password
+        user.username = username
+        user.save()
+        return super(StudentUpdate, self).form_valid(form)
+
+    def get_form_kwargs(self):
+        kwargs = super(StudentUpdate, self).get_form_kwargs()
+        kwargs['instance'] = self.get_object()
+        return kwargs
 
 
 class StudentDelete(generic.edit.DeleteView):
