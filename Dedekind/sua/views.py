@@ -1,4 +1,5 @@
 from django.views import generic
+from django.contrib.auth.mixins import UserPassesTestMixin, PermissionRequiredMixin
 from django.db.models.query import QuerySet
 from django.urls import reverse_lazy
 from django.core import serializers
@@ -81,10 +82,16 @@ class JSONStudentListView(JSONListView):
         return json_context
 
 
-class StudentDetailView(generic.DetailView):
+class StudentDetailView(UserPassesTestMixin, generic.DetailView):
     model = Sua_Application
     template_name = 'sua/student_detail.html'
     context_object_name = 'student'
+    login_url = '/'
+
+    def test_func(self):
+        usr = self.request.user
+        stu = self.get_object()
+        return usr.is_superuser or usr.pk == stu.pk
 
     def get_queryset(self):
         return Student.objects.all()
@@ -96,9 +103,11 @@ class StudentDetailView(generic.DetailView):
         return context
 
 
-class StudentCreate(generic.edit.CreateView):
+class StudentCreate(PermissionRequiredMixin, generic.edit.CreateView):
     template_name = 'sua/student_form.html'
     form_class = StudentForm
+    permission_required = 'sua.add_student'
+    login_url = '/'
 
     def form_valid(self, form):
         username = form.cleaned_data['number']
@@ -111,10 +120,12 @@ class StudentCreate(generic.edit.CreateView):
         return super(StudentCreate, self).form_valid(form)
 
 
-class StudentUpdate(generic.edit.CreateView):
+class StudentUpdate(PermissionRequiredMixin, generic.edit.CreateView):
     template_name = 'sua/student_form.html'
     form_class = StudentForm
     model = Student
+    permission_required = 'sua.change_student'
+    login_url = '/'
 
     def form_valid(self, form):
         user = get_object_or_404(User, pk=form.instance.pk)
@@ -132,9 +143,11 @@ class StudentUpdate(generic.edit.CreateView):
         return kwargs
 
 
-class StudentDelete(generic.edit.DeleteView):
+class StudentDelete(PermissionRequiredMixin, generic.edit.DeleteView):
     model = Student
     success_url = reverse_lazy('sua:admin-index')
+    permission_required = 'sua.delete_student'
+    login_url = '/'
 
 
 def login_view(request):
