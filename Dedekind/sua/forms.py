@@ -136,6 +136,23 @@ class Sua_ApplicationForm(ModelForm):
         }
 
 
+class Sua_ApplicationCheckForm(ModelForm):
+    is_passed = forms.BooleanField(required=False)
+    feedback = forms.CharField(required=False, widget=forms.Textarea(attrs={
+        'class': 'form-control',
+        'placeholder': '请写下公益时申请不通过的理由。',
+        'cols': 20,
+    }))
+
+    class Meta:
+        model = Sua_Application
+        fields = [
+            'feedback',
+        ]
+        widgets = {
+        }
+
+
 class AppealForm(ModelForm):
     class Meta:
         model = Appeal

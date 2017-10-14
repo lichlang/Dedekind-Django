@@ -10,7 +10,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.contrib.auth.models import User, Group
-from .forms import LoginForm, SuaForm, Sua_ApplicationForm, ProofForm, AppealForm, StudentForm
+from .forms import LoginForm, SuaForm, Sua_ApplicationForm, ProofForm, AppealForm, StudentForm, Sua_ApplicationCheckForm
 from .models import Sua, Proof, Sua_Application, GSuaPublicity, GSua, Student, Appeal, SuaGroup
 import json
 
@@ -110,6 +110,27 @@ class JSONStudentListView(JSONListView):
         if usr.is_superuser:
             json_context['res'] = "success"
             json_context['msg'] = {'student_list': context['object_list']}
+        else:
+            json_context['res'] = "failure"
+            json_context['msg'] = None
+        return json_context
+
+
+class JSONApplicationCheckListView(JSONListView):
+    """
+    查询待审核的Application列表的JSON API
+    """
+
+    def get_queryset(self):
+        return Sua_Application.objects.filter(is_checked=False)
+
+    def get_context_data(self, **kwargs):
+        context = super(JSONApplicationCheckListView, self).get_context_data(**kwargs)
+        usr = self.request.user
+        json_context = {}
+        if usr.is_superuser:
+            json_context['res'] = "success"
+            json_context['msg'] = {'sua_application_checklist': context['object_list']}
         else:
             json_context['res'] = "failure"
             json_context['msg'] = None
@@ -435,6 +456,48 @@ class Sua_ApplicationDelete(PermissionRequiredMixin, generic.edit.DeleteView):
     success_url = reverse_lazy('sua:admin-index')
     permission_required = 'sua.delete_sua_application'
     login_url = '/'
+
+
+class Sua_ApplicationCheck(PermissionRequiredMixin, generic.edit.UpdateView):
+    template_name = 'sua/sua_application_check.html'
+    form_class = Sua_ApplicationCheckForm
+    permission_required = 'sua.change_sua_application'
+    login_url = '/'
+    success_url = '/'
+
+    def get_queryset(self):
+        return Sua_Application.objects.all()
+
+    def form_valid(self, form):
+        self.application = self.get_object()
+        form.instance.is_checked = True
+        self.application.sua.is_valid = form.cleaned_data['is_passed']
+        self.application.sua.save()
+        self.success_url = reverse('sua:application-detail', kwargs={'pk': self.application.pk})
+        return super(Sua_ApplicationCheck, self).form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super(Sua_ApplicationCheck, self).get_context_data(**kwargs)
+        self.application = self.get_object()
+        date = self.application.date
+        year = date.year
+        month = date.month
+        if month < 9:
+            year_before = year - 1
+            year_after = year
+        else:
+            year_before = year
+            year_after = year + 1
+
+        context['year_before'] = year_before
+        context['year_after'] = year_after
+        context['sa'] = self.application
+        return context
+
+    def get_initial(self):
+        initial = super(Sua_ApplicationCheck, self).get_initial()
+        initial['is_passed'] = self.get_object().sua.is_valid
+        return initial
 
 
 def login_view(request):
