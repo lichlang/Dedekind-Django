@@ -62,8 +62,8 @@ urlpatterns = [
         name='application-update',
     ),
     url(
-        r'^sua/(?P<pk>[0-9]+)/delete/$',
-        login_required(views.SuaDelete.as_view()),
-        name='sua-delete',
+        r'^application/(?P<pk>[0-9]+)/delete/$',
+        login_required(views.Sua_ApplicationDelete.as_view()),
+        name='application-delete',
     ),
 ]

@@ -430,10 +430,10 @@ class Sua_ApplicationUpdate(PermissionRequiredMixin, generic.edit.UpdateView):
         return context
 
 
-class SuaDelete(PermissionRequiredMixin, generic.edit.DeleteView):
-    model = Sua
+class Sua_ApplicationDelete(PermissionRequiredMixin, generic.edit.DeleteView):
+    model = Sua_Application
     success_url = reverse_lazy('sua:admin-index')
-    permission_required = 'sua.delete_sua'
+    permission_required = 'sua.delete_sua_application'
     login_url = '/'
 
 
