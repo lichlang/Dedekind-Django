@@ -39,11 +39,17 @@ class JSONResponseMixin(object):
 
 
 class JSONListView(JSONResponseMixin, generic.list.BaseListView):
+    """
+    JSON API的基础View类
+    """
     def render_to_response(self, context, **response_kwargs):
         return self.render_to_json_response(context, **response_kwargs)
 
 
 class JSONStudentSuaListView(JSONListView):
+    """
+    查询单个Student的Sua列表的JSON API
+    """
     def is_itself(self):
         usr = self.request.user
         return hasattr(usr, 'student') and usr.student == self.student
@@ -66,6 +72,9 @@ class JSONStudentSuaListView(JSONListView):
 
 
 class JSONSuaApplicationView(JSONListView):
+    """
+    查询单个Sua对应的Application的JSON API
+    """
     def is_itself(self):
         usr = self.request.user
         return hasattr(usr, 'student') and usr.student == self.sua.student
@@ -88,6 +97,9 @@ class JSONSuaApplicationView(JSONListView):
 
 
 class JSONStudentListView(JSONListView):
+    """
+    查询Student列表的JSON API
+    """
     def get_queryset(self):
         return Student.objects.order_by('number')
 
@@ -105,6 +117,9 @@ class JSONStudentListView(JSONListView):
 
 
 class StudentDetailView(UserPassesTestMixin, generic.DetailView):
+    """
+    查询Student详情的View
+    """
     model = Sua_Application
     template_name = 'sua/student_detail.html'
     context_object_name = 'student'
