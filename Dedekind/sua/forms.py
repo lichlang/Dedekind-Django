@@ -16,6 +16,8 @@ def get_SuaGroup_Choices():
 class MyDateWidget(AdminDateWidget):
     def format_value(self, value):
         old_value = super(MyDateWidget, self).format_value(value)
+        if old_value is None:
+            return old_value
         dates = old_value.split('/')
         new_value = '-'.join(dates)
         return new_value
