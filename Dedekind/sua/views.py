@@ -65,6 +65,28 @@ class JSONStudentSuaListView(JSONListView):
         return json_context
 
 
+class JSONSuaApplicationView(JSONListView):
+    def is_itself(self):
+        usr = self.request.user
+        return hasattr(usr, 'student') and usr.student == self.sua.student
+
+    def get_queryset(self):
+        self.sua = get_object_or_404(Sua, pk=self.args[0])
+        return Sua_Application.objects.filter(sua=self.sua)
+
+    def get_context_data(self, **kwargs):
+        context = super(JSONSuaApplicationView, self).get_context_data(**kwargs)
+        usr = self.request.user
+        json_context = {}
+        if usr.is_superuser or self.is_itself():
+            json_context['res'] = "success"
+            json_context['msg'] = {'sua_application': context['object_list']}
+        else:
+            json_context['res'] = "failure"
+            json_context['msg'] = None
+        return json_context
+
+
 class JSONStudentListView(JSONListView):
     def get_queryset(self):
         return Student.objects.order_by('number')

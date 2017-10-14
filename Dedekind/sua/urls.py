@@ -27,6 +27,11 @@ urlpatterns = [
         name='student-sualist-json',
     ),
     url(
+        r'^json/sua/([0-9]+)/application$',
+        login_required(views.JSONSuaApplicationView.as_view()),
+        name='sua-application-json',
+    ),
+    url(
         r'^student/(?P<pk>[0-9]+)/$',
         login_required(views.StudentDetailView.as_view()),
         name='student-detail',
