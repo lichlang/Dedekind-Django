@@ -13,6 +13,14 @@ def get_SuaGroup_Choices():
     return suaGroup_Choices
 
 
+class MyDateWidget(AdminDateWidget):
+    def format_value(self, value):
+        old_value = super(MyDateWidget, self).format_value(value)
+        dates = old_value.split('/')
+        new_value = '-'.join(dates)
+        return new_value
+
+
 class LoginForm(forms.Form):
     user_name = forms.CharField(
         label='用户名',
@@ -84,7 +92,7 @@ class SuaForm(ModelForm):
             'team': forms.TextInput(attrs={
                 'class': 'form-control',
             }),
-            'date': AdminDateWidget(attrs={
+            'date': MyDateWidget(attrs={
                 'class': 'form-control',
             }),
             'suahours': forms.TextInput(attrs={

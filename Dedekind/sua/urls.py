@@ -12,11 +12,6 @@ urlpatterns = [
     url(r'^apply_sua$', views.apply_sua, name='apply_sua'),
     url(r'^appeal_for$', views.appeal_for, name='appeal_for'),
     url(
-        r'^application/(?P<pk>[0-9]+)/$',
-        login_required(views.Sua_ApplicationDetailView.as_view()),
-        name='application-detail',
-    ),
-    url(
         r'^json/student/list',
         login_required(views.JSONStudentListView.as_view()),
         name='student-list-json',
@@ -50,5 +45,25 @@ urlpatterns = [
         r'^student/(?P<pk>[0-9]+)/delete/$',
         login_required(views.StudentDelete.as_view()),
         name='student-delete',
+    ),
+    url(
+        r'^application/(?P<pk>[0-9]+)/$',
+        login_required(views.Sua_ApplicationDetailView.as_view()),
+        name='application-detail',
+    ),
+    url(
+        r'^application/student/([0-9]+)/add$',
+        login_required(views.Sua_ApplicationCreate.as_view()),
+        name='application-add',
+    ),
+    url(
+        r'^application/(?P<pk>[0-9]+)/update$',
+        login_required(views.Sua_ApplicationUpdate.as_view()),
+        name='application-update',
+    ),
+    url(
+        r'^sua/(?P<pk>[0-9]+)/delete/$',
+        login_required(views.SuaDelete.as_view()),
+        name='sua-delete',
     ),
 ]

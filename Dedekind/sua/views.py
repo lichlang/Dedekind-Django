@@ -1,7 +1,7 @@
 from django.views import generic
 from django.contrib.auth.mixins import UserPassesTestMixin, PermissionRequiredMixin
 from django.db.models.query import QuerySet
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.core import serializers
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
@@ -173,7 +173,7 @@ class StudentCreate(PermissionRequiredMixin, generic.edit.CreateView):
         return initial
 
 
-class StudentUpdate(PermissionRequiredMixin, generic.edit.CreateView):
+class StudentUpdate(PermissionRequiredMixin, generic.edit.UpdateView):
     template_name = 'sua/student_form.html'
     form_class = StudentForm
     model = Student
@@ -221,7 +221,7 @@ class StudentDelete(PermissionRequiredMixin, generic.edit.DeleteView):
 
 class Sua_ApplicationDetailView(UserPassesTestMixin, generic.DetailView):
     """
-    查询Student详情的View
+    查询Application详情的View
     """
     model = Sua_Application
     template_name = 'sua/application_detail.html'
@@ -255,81 +255,185 @@ class Sua_ApplicationDetailView(UserPassesTestMixin, generic.DetailView):
 
 
 class Sua_ApplicationCreate(PermissionRequiredMixin, generic.edit.CreateView):
-    template_name = 'sua/student_form.html'
-    form_class = StudentForm
-    permission_required = 'sua.add_student'
+    template_name = 'sua/sua_application_form.html'
+    form_class = SuaForm
+    permission_required = 'sua.add_sua_application'
     login_url = '/'
+    success_url = '/'
 
     def form_valid(self, form):
-        username = form.cleaned_data['number']
-        password = form.cleaned_data['initial_password']
-        group_pk_list = form.cleaned_data['group']
-        if password == '' or None:
-            password = '12345678'
-        user = User.objects.create_user(username=username, password=password)
+        context = self.get_context_data()
+        if context['proofForm'].is_valid() and\
+                context['sua_ApplicationForm'].is_valid():
+            if context['proofForm'].cleaned_data['is_offline']:
+                offlineProofSet = Proof.objects.filter(is_offline=True)
+                if offlineProofSet.count == 0:
+                    assert(User.objects.filter(is_superuser=True).count != 0)
+                    proof = Proof.objects.create(
+                        user=User.objects.filter(is_superuser=True)[0],
+                        date=timezone.now(),
+                        is_offline=True,
+                    )
+                    proof.save()
+                else:
+                    proof = offlineProofSet[0]
+            else:
+                proof = context['proofForm'].save(commit=False)
+            sua = form.save(commit=False)
+            sua_Application = context['sua_ApplicationForm'].save(commit=False)
+            # 处理proof
+            if not context['proofForm'].cleaned_data['is_offline']:
+                proof.user = self.request.user
+                proof.date = timezone.now()
+                proof.save()
+            # 处理sua
+            sua.student = self.stu
+            sua.last_time_suahours = 0.0
+            sua.is_valid = True
+            sua.save()
+            # 处理sua_Application
+            sua_Application.sua = sua
+            sua_Application.date = timezone.now()
+            sua_Application.proof = proof
+            sua_Application.is_checked = True
+            sua_Application.save()
+            self.success_url = reverse('sua:application-detail', kwargs={'pk': sua_Application.pk})
+        else:
+            self.form_invalid()
+        return super(Sua_ApplicationCreate, self).form_valid(form)
 
-        for group in user.groups.all():
-            if group.pk not in group_pk_list:
-                user.groups.remove(group)
-        for group_pk in group_pk_list:
-            user.groups.add(Group.objects.get(pk=int(group_pk)))
+    def get_context_data(self, **kwargs):
+        context = super(Sua_ApplicationCreate, self).get_context_data(**kwargs)
+        self.stu = get_object_or_404(Student, pk=self.args[0])
+        date = timezone.now()
+        year = date.year
+        month = date.month
+        if month < 9:
+            year_before = year - 1
+            year_after = year
+        else:
+            year_before = year
+            year_after = year + 1
 
-        user.save()
-        form.instance.user = user
-        return super(StudentCreate, self).form_valid(form)
+        if self.request.method == 'POST':
+            proofForm = ProofForm(self.request.POST, self.request.FILES, prefix='proofForm')
+            sua_ApplicationForm = Sua_ApplicationForm(
+                self.request.POST,
+                prefix='sua_ApplicationForm',
+            )
+        else:
+            proofForm = ProofForm(prefix='proofForm')
+            sua_ApplicationForm = Sua_ApplicationForm(
+                prefix='sua_ApplicationForm',
+            )
+        context['suaForm'] = context['form']
+        context['proofForm'] = proofForm
+        context['sua_ApplicationForm'] = sua_ApplicationForm
+        context['apply_date'] = date.date()
+        context['apply_year_before'] = year_before
+        context['apply_year_after'] = year_after
+        context['stu_name'] = self.stu.name
+        context['stu_number'] = self.stu.number
+        return context
 
-    def get_initial(self):
-        initial = super(StudentCreate, self).get_initial()
-        initial['group'] = initial.get('group', [])
-        pk = SuaGroup.objects.get(name='个人用户').group.pk
-        if pk not in initial['group']:
-            initial['group'].append(pk)
-        return initial
 
-
-class StudentUpdate(PermissionRequiredMixin, generic.edit.CreateView):
-    template_name = 'sua/student_form.html'
-    form_class = StudentForm
-    model = Student
-    permission_required = 'sua.change_student'
+class Sua_ApplicationUpdate(PermissionRequiredMixin, generic.edit.UpdateView):
+    template_name = 'sua/sua_application_form.html'
+    form_class = Sua_ApplicationForm
+    permission_required = 'sua.change_sua_application'
     login_url = '/'
+    success_url = '/'
+
+    def get_queryset(self):
+        return Sua_Application.objects.all()
 
     def form_valid(self, form):
-        user = get_object_or_404(User, pk=form.instance.pk)
-        username = form.cleaned_data['number']
-        password = form.cleaned_data['initial_password']
-        group_pk_list = form.cleaned_data['group']
-        if not(password == '' or None):
-            user.password = password
-        user.username = username
+        context = self.get_context_data()
+        if context['proofForm'].is_valid() and\
+                context['suaForm'].is_valid():
+            if context['proofForm'].cleaned_data['is_offline']:
+                offlineProofSet = Proof.objects.filter(is_offline=True)
+                if offlineProofSet.count == 0:
+                    assert(User.objects.filter(is_superuser=True).count != 0)
+                    proof = Proof.objects.create(
+                        user=User.objects.filter(is_superuser=True)[0],
+                        date=timezone.now(),
+                        is_offline=True,
+                    )
+                    proof.save()
+                else:
+                    proof = offlineProofSet[0]
+            else:
+                proof = context['proofForm'].save(commit=False)
+                if context['proofForm'].cleaned_data['proof_file'] is None:
+                    proof = self.application.proof
+            sua = context['suaForm'].save(commit=False)
+            sua_Application = context['sua_ApplicationForm'].save(commit=False)
+            # 处理proof
+            if not (context['proofForm'].cleaned_data['is_offline'] or context['proofForm'].cleaned_data['proof_file'] is None):
+                proof.user = self.request.user
+                proof.date = timezone.now()
+                proof.save()
+            # 处理sua
+            self.sua.group = sua.group
+            self.sua.title = sua.title
+            self.sua.team = sua.team
+            self.sua.date = sua.date
+            self.sua.suahours = sua.suahours
+            self.sua.save()
+            # 处理sua_Application
+            self.application.detail = sua_Application.detail
+            self.application.contact = sua_Application.contact
+            sua_Application.proof = proof
+            self.application.proof = sua_Application.proof
+            self.application.save()
+            self.success_url = reverse('sua:application-detail', kwargs={'pk': self.application.pk})
+        else:
+            self.form_invalid(form)
+        return super(Sua_ApplicationUpdate, self).form_valid(form)
 
-        for group in user.groups.all():
-            if group.pk not in group_pk_list:
-                user.groups.remove(group)
-        for group_pk in group_pk_list:
-            user.groups.add(Group.objects.get(pk=int(group_pk)))
+    def get_context_data(self, **kwargs):
+        context = super(Sua_ApplicationUpdate, self).get_context_data(**kwargs)
+        self.application = self.get_object()
+        self.sua = self.application.sua
+        self.stu = self.sua.student
+        date = self.application.date
+        year = date.year
+        month = date.month
+        if month < 9:
+            year_before = year - 1
+            year_after = year
+        else:
+            year_before = year
+            year_after = year + 1
 
-        user.save()
-        return super(StudentUpdate, self).form_valid(form)
+        if self.request.method == 'POST':
+            proofForm = ProofForm(self.request.POST, self.request.FILES, prefix='proofForm')
+            suaForm = SuaForm(
+                self.request.POST,
+                prefix='suaForm',
+            )
+        else:
+            proofForm = ProofForm(prefix='proofForm', instance=self.application.proof)
+            suaForm = SuaForm(
+                prefix='suaForm',
+                instance=self.sua
+            )
+        context['suaForm'] = suaForm
+        context['proofForm'] = proofForm
+        context['sua_ApplicationForm'] = context['form']
+        context['apply_date'] = date.date()
+        context['apply_year_before'] = year_before
+        context['apply_year_after'] = year_after
+        context['stu_name'] = self.stu.name
+        context['stu_number'] = self.stu.number
+        return context
 
-    def get_form_kwargs(self):
-        kwargs = super(StudentUpdate, self).get_form_kwargs()
-        kwargs['instance'] = self.get_object()
-        return kwargs
 
-    def get_initial(self):
-        initial = super(StudentUpdate, self).get_initial()
-        initial['group'] = initial.get('group', [])
-        groups = (self.get_object()).user.groups.all()
-        for group in groups:
-            initial['group'].append(group.pk)
-        return initial
-
-
-class StudentDelete(PermissionRequiredMixin, generic.edit.DeleteView):
-    model = Student
+class SuaDelete(PermissionRequiredMixin, generic.edit.DeleteView):
+    model = Sua
     success_url = reverse_lazy('sua:admin-index')
-    permission_required = 'sua.delete_student'
+    permission_required = 'sua.delete_sua'
     login_url = '/'
 
 
