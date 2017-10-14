@@ -56,7 +56,7 @@ class JSONStudentSuaListView(JSONListView):
 
     def get_queryset(self):
         self.student = get_object_or_404(Student, pk=self.args[0])
-        return Sua.objects.filter(student=self.student)
+        return Sua.objects.filter(student=self.student, is_valid=True)
 
     def get_context_data(self, **kwargs):
         context = super(JSONStudentSuaListView, self).get_context_data(**kwargs)
@@ -120,7 +120,7 @@ class StudentDetailView(UserPassesTestMixin, generic.DetailView):
     """
     查询Student详情的View
     """
-    model = Sua_Application
+    model = Student
     template_name = 'sua/student_detail.html'
     context_object_name = 'student'
     login_url = '/'
@@ -141,6 +141,120 @@ class StudentDetailView(UserPassesTestMixin, generic.DetailView):
 
 
 class StudentCreate(PermissionRequiredMixin, generic.edit.CreateView):
+    template_name = 'sua/student_form.html'
+    form_class = StudentForm
+    permission_required = 'sua.add_student'
+    login_url = '/'
+
+    def form_valid(self, form):
+        username = form.cleaned_data['number']
+        password = form.cleaned_data['initial_password']
+        group_pk_list = form.cleaned_data['group']
+        if password == '' or None:
+            password = '12345678'
+        user = User.objects.create_user(username=username, password=password)
+
+        for group in user.groups.all():
+            if group.pk not in group_pk_list:
+                user.groups.remove(group)
+        for group_pk in group_pk_list:
+            user.groups.add(Group.objects.get(pk=int(group_pk)))
+
+        user.save()
+        form.instance.user = user
+        return super(StudentCreate, self).form_valid(form)
+
+    def get_initial(self):
+        initial = super(StudentCreate, self).get_initial()
+        initial['group'] = initial.get('group', [])
+        pk = SuaGroup.objects.get(name='个人用户').group.pk
+        if pk not in initial['group']:
+            initial['group'].append(pk)
+        return initial
+
+
+class StudentUpdate(PermissionRequiredMixin, generic.edit.CreateView):
+    template_name = 'sua/student_form.html'
+    form_class = StudentForm
+    model = Student
+    permission_required = 'sua.change_student'
+    login_url = '/'
+
+    def form_valid(self, form):
+        user = get_object_or_404(User, pk=form.instance.pk)
+        username = form.cleaned_data['number']
+        password = form.cleaned_data['initial_password']
+        group_pk_list = form.cleaned_data['group']
+        if not(password == '' or None):
+            user.password = password
+        user.username = username
+
+        for group in user.groups.all():
+            if group.pk not in group_pk_list:
+                user.groups.remove(group)
+        for group_pk in group_pk_list:
+            user.groups.add(Group.objects.get(pk=int(group_pk)))
+
+        user.save()
+        return super(StudentUpdate, self).form_valid(form)
+
+    def get_form_kwargs(self):
+        kwargs = super(StudentUpdate, self).get_form_kwargs()
+        kwargs['instance'] = self.get_object()
+        return kwargs
+
+    def get_initial(self):
+        initial = super(StudentUpdate, self).get_initial()
+        initial['group'] = initial.get('group', [])
+        groups = (self.get_object()).user.groups.all()
+        for group in groups:
+            initial['group'].append(group.pk)
+        return initial
+
+
+class StudentDelete(PermissionRequiredMixin, generic.edit.DeleteView):
+    model = Student
+    success_url = reverse_lazy('sua:admin-index')
+    permission_required = 'sua.delete_student'
+    login_url = '/'
+
+
+class Sua_ApplicationDetailView(UserPassesTestMixin, generic.DetailView):
+    """
+    查询Student详情的View
+    """
+    model = Sua_Application
+    template_name = 'sua/application_detail.html'
+    context_object_name = 'sa'
+    login_url = '/'
+
+    def test_func(self):
+        usr = self.request.user
+        application = self.get_object()
+        return usr.is_superuser or usr.pk == application.sua.student.pk
+
+    def get_queryset(self):
+        return Sua_Application.objects.all()
+
+    def get_context_data(self, **kwargs):
+        context = super(Sua_ApplicationDetailView, self).get_context_data(**kwargs)
+        sa = self.get_object()
+
+        year = sa.date.year
+        month = sa.date.month
+        if month < 9:
+            year_before = year - 1
+            year_after = year
+        else:
+            year_before = year
+            year_after = year + 1
+
+        context['year_before'] = year_before
+        context['year_after'] = year_after
+        return context
+
+
+class Sua_ApplicationCreate(PermissionRequiredMixin, generic.edit.CreateView):
     template_name = 'sua/student_form.html'
     form_class = StudentForm
     permission_required = 'sua.add_student'

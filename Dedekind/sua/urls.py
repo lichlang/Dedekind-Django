@@ -13,8 +13,8 @@ urlpatterns = [
     url(r'^appeal_for$', views.appeal_for, name='appeal_for'),
     url(
         r'^application/(?P<pk>[0-9]+)/$',
-        login_required(views.ApplicationDetailView.as_view()),
-        name='application_detail',
+        login_required(views.Sua_ApplicationDetailView.as_view()),
+        name='application-detail',
     ),
     url(
         r'^json/student/list',
