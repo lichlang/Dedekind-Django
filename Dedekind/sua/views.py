@@ -11,7 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.contrib.auth.models import User, Group
 from .forms import LoginForm, SuaForm, Sua_ApplicationForm, ProofForm, AppealForm, StudentForm
-from .models import Sua, Proof, Sua_Application, GSuaPublicity, GSua, Student, Appeal
+from .models import Sua, Proof, Sua_Application, GSuaPublicity, GSua, Student, Appeal, SuaGroup
 import json
 
 
@@ -112,12 +112,28 @@ class StudentCreate(PermissionRequiredMixin, generic.edit.CreateView):
     def form_valid(self, form):
         username = form.cleaned_data['number']
         password = form.cleaned_data['initial_password']
+        group_pk_list = form.cleaned_data['group']
         if password == '' or None:
             password = '12345678'
         user = User.objects.create_user(username=username, password=password)
+
+        for group in user.groups.all():
+            if group.pk not in group_pk_list:
+                user.groups.remove(group)
+        for group_pk in group_pk_list:
+            user.groups.add(Group.objects.get(pk=int(group_pk)))
+
         user.save()
         form.instance.user = user
         return super(StudentCreate, self).form_valid(form)
+
+    def get_initial(self):
+        initial = super(StudentCreate, self).get_initial()
+        initial['group'] = initial.get('group', [])
+        pk = SuaGroup.objects.get(name='个人用户').group.pk
+        if pk not in initial['group']:
+            initial['group'].append(pk)
+        return initial
 
 
 class StudentUpdate(PermissionRequiredMixin, generic.edit.CreateView):
@@ -131,9 +147,17 @@ class StudentUpdate(PermissionRequiredMixin, generic.edit.CreateView):
         user = get_object_or_404(User, pk=form.instance.pk)
         username = form.cleaned_data['number']
         password = form.cleaned_data['initial_password']
+        group_pk_list = form.cleaned_data['group']
         if not(password == '' or None):
             user.password = password
         user.username = username
+
+        for group in user.groups.all():
+            if group.pk not in group_pk_list:
+                user.groups.remove(group)
+        for group_pk in group_pk_list:
+            user.groups.add(Group.objects.get(pk=int(group_pk)))
+
         user.save()
         return super(StudentUpdate, self).form_valid(form)
 
@@ -141,6 +165,14 @@ class StudentUpdate(PermissionRequiredMixin, generic.edit.CreateView):
         kwargs = super(StudentUpdate, self).get_form_kwargs()
         kwargs['instance'] = self.get_object()
         return kwargs
+
+    def get_initial(self):
+        initial = super(StudentUpdate, self).get_initial()
+        initial['group'] = initial.get('group', [])
+        groups = (self.get_object()).user.groups.all()
+        for group in groups:
+            initial['group'].append(group.pk)
+        return initial
 
 
 class StudentDelete(PermissionRequiredMixin, generic.edit.DeleteView):

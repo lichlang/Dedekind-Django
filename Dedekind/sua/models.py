@@ -34,10 +34,15 @@ class Student(models.Model):
 
 
 class SuaGroup(models.Model):
-    group = models.ForeignKey(Group, on_delete=models.CASCADE)
+    group = models.OneToOneField(
+        Group,
+        on_delete=models.CASCADE,
+        primary_key=True,
+    )
     name = models.CharField(max_length=100)
     is_staff = models.BooleanField(default=False)
     contact = models.CharField(max_length=100, blank=True)
+    rank = models.IntegerField(blank=True)
 
     def __str__(self):
         if self.is_staff:

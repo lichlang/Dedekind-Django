@@ -2,7 +2,15 @@ from django import forms
 from django.forms import ModelForm
 from django.forms.extras.widgets import SelectDateWidget
 from django.contrib.admin.widgets import AdminDateWidget
-from sua.models import Sua, Sua_Application, Proof, Student, Appeal
+from sua.models import Sua, Sua_Application, Proof, Student, Appeal, SuaGroup
+
+
+def get_SuaGroup_Choices():
+    suaGroups = SuaGroup.objects.order_by('rank')
+    suaGroup_Choices = []
+    for suaGroup in suaGroups:
+        suaGroup_Choices.append((suaGroup.pk, suaGroup.name))
+    return suaGroup_Choices
 
 
 class LoginForm(forms.Form):
@@ -22,6 +30,9 @@ class StudentForm(ModelForm):
         'class': 'form-control',
         'placeholder': '请输入新的初始密码',
     }), required=False)
+    group = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple(attrs={
+        'class': 'checkbox-inline',
+    }), choices=get_SuaGroup_Choices())
 
     class Meta:
         model = Student
