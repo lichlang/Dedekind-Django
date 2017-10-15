@@ -91,4 +91,9 @@ urlpatterns = [
         login_required(views.Sua_ApplicationCheck.as_view()),
         name='application-check',
     ),
+    url(
+        r'^gsuap/(?P<pk>[0-9]+)/$',
+        login_required(views.GSuaPublicityDetailView.as_view()),
+        name='gsuap-detail',
+    ),
 ]

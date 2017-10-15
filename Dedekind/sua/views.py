@@ -565,6 +565,45 @@ class Sua_ApplicationCheck(PermissionRequiredMixin, generic.edit.UpdateView):
         return initial
 
 
+class GSuaPublicityDetailView(UserPassesTestMixin, generic.DetailView):
+    """
+    查询GSuaPublicity详情的View
+    """
+    model = GSuaPublicity
+    template_name = 'sua/gsua_publicity_detail.html'
+    context_object_name = 'gsuap'
+    login_url = '/'
+
+    def test_func(self):
+        flag = False
+        usr = self.request.user
+        groups = usr.groups.all()
+        gsuap = self.get_object()
+        if gsuap.gsua.group.group in groups:
+            flag = True
+        return usr.is_superuser or flag
+
+    def get_queryset(self):
+        return GSuaPublicity.objects.all()
+
+    def get_context_data(self, **kwargs):
+        context = super(GSuaPublicityDetailView, self).get_context_data(**kwargs)
+        gsuap = self.get_object()
+
+        year = gsuap.gsua.date.year
+        month = gsuap.gsua.date.month
+        if month < 9:
+            year_before = year - 1
+            year_after = year
+        else:
+            year_before = year
+            year_after = year + 1
+
+        context['year_before'] = year_before
+        context['year_after'] = year_after
+        return context
+
+
 def login_view(request):
     if request.method == 'POST':
         form = LoginForm(request.POST)
