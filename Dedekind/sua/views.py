@@ -89,7 +89,7 @@ class JSONSuaApplicationView(JSONListView):
         json_context = {}
         if usr.is_superuser or self.is_itself():
             json_context['res'] = "success"
-            json_context['msg'] = {'sua_application': context['object_list']}
+            json_context['msg'] = {'application': context['object_list']}
         else:
             json_context['res'] = "failure"
             json_context['msg'] = None
@@ -130,7 +130,72 @@ class JSONApplicationCheckListView(JSONListView):
         json_context = {}
         if usr.is_superuser:
             json_context['res'] = "success"
-            json_context['msg'] = {'sua_application_checklist': context['object_list']}
+            json_context['msg'] = {'application_checklist': context['object_list']}
+        else:
+            json_context['res'] = "failure"
+            json_context['msg'] = None
+        return json_context
+
+
+class JSONGSuaPublicityListView(JSONListView):
+    """
+    查询全体GSuaPublicity列表的JSON API
+    """
+
+    def get_queryset(self):
+        return GSuaPublicity.objects.order_by('-published_begin_date')
+
+    def get_context_data(self, **kwargs):
+        context = super(JSONGSuaPublicityListView, self).get_context_data(**kwargs)
+        usr = self.request.user
+        json_context = {}
+        if usr.is_superuser:
+            json_context['res'] = "success"
+            json_context['msg'] = {'gsua_publicity_list': context['object_list']}
+        else:
+            json_context['res'] = "failure"
+            json_context['msg'] = None
+        return json_context
+
+
+class JSONGSuaSuaListView(JSONListView):
+    """
+    查询某一Gsua的Sua列表的JSON API
+    """
+
+    def get_queryset(self):
+        self.gsua = get_object_or_404(GSua, pk=self.args[0])
+        return self.gsua.suas.all()
+
+    def get_context_data(self, **kwargs):
+        context = super(JSONGSuaSuaListView, self).get_context_data(**kwargs)
+        usr = self.request.user
+        json_context = {}
+        if usr.is_superuser:
+            json_context['res'] = "success"
+            json_context['msg'] = {'sua_list': context['object_list']}
+        else:
+            json_context['res'] = "failure"
+            json_context['msg'] = None
+        return json_context
+
+
+class JSONSuaGSuaListView(JSONListView):
+    """
+    查询某一Sua的GSua列表的JSON API
+    """
+
+    def get_queryset(self):
+        self.sua = get_object_or_404(Sua, pk=self.args[0])
+        return self.sua.gsua_set.all()
+
+    def get_context_data(self, **kwargs):
+        context = super(JSONSuaGSuaListView, self).get_context_data(**kwargs)
+        usr = self.request.user
+        json_context = {}
+        if usr.is_superuser:
+            json_context['res'] = "success"
+            json_context['msg'] = {'gsua': context['object_list']}
         else:
             json_context['res'] = "failure"
             json_context['msg'] = None

@@ -27,9 +27,24 @@ urlpatterns = [
         name='sua-application-json',
     ),
     url(
+        r'^sua/([0-9]+)/gsua$',
+        login_required(views.JSONSuaGSuaListView.as_view()),
+        name='sua-gsua-json',
+    ),
+    url(
         r'^application/checklist$',
         login_required(views.JSONApplicationCheckListView.as_view()),
         name='application-checklist-json',
+    ),
+    url(
+        r'^gsua/list$',
+        login_required(views.JSONGSuaPublicityListView.as_view()),
+        name='gsua-list-json',
+    ),
+    url(
+        r'^gsua/([0-9]+)/sualist$',
+        login_required(views.JSONGSuaSuaListView.as_view()),
+        name='gsua-sualist-json',
     ),
     url(
         r'^student/(?P<pk>[0-9]+)/$',
