@@ -38,9 +38,9 @@ urlpatterns = [
         name='application-checklist-json',
     ),
     url(
-        r'^gsua/list$',
+        r'^gsuap/list$',
         login_required(views.JSONGSuaPublicityListView.as_view()),
-        name='gsua-list-json',
+        name='gsuap-list-json',
     ),
     url(
         r'^gsua/([0-9]+)/sualist$',
@@ -96,5 +96,10 @@ urlpatterns = [
         r'^gsuap/(?P<pk>[0-9]+)/$',
         login_required(views.GSuaPublicityDetailView.as_view()),
         name='gsuap-detail',
+    ),
+    url(
+        r'^gsuap/add$',
+        login_required(views.GSuaPublicityCreate.as_view()),
+        name='gsuap-add',
     ),
 ]

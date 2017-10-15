@@ -56,7 +56,7 @@ class Sua(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     group = models.ForeignKey(SuaGroup, on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
-    team = models.CharField(max_length=200, default="无分组")
+    team = models.CharField(max_length=200)
     date = models.DateTimeField('活动日期')
     suahours = models.FloatField()
     last_time_suahours = models.FloatField(default=0.0)
@@ -134,7 +134,7 @@ class GSuaPublicity(models.Model):
     detail = models.CharField(max_length=400)
     contact = models.CharField(max_length=100, blank=True)
     is_published = models.BooleanField(default=False)
-    published_begin_date = models.DateTimeField('开始公示时间')
+    published_begin_date = models.DateTimeField('开始公示时间', default=datetime.datetime.now())
     published_end_date = models.DateTimeField('结束公示时间')
 
     def __str__(self):

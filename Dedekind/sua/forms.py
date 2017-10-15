@@ -170,9 +170,9 @@ class AppealForm(ModelForm):
 
 class GSuaPublicityForm(ModelForm):
     is_published = forms.BooleanField(required=False)
-    group = forms.ChoiceField(widget=forms.Select(attrs={
-        'class': 'form-control',
-    }), choices=get_SuaGroup_Choices())
+    date = forms.DateTimeField(widget=MyDateWidget(attrs={
+        'class': 'form-control'
+    }))
 
     class Meta:
         model = GSuaPublicity

@@ -496,7 +496,7 @@ class Sua_ApplicationUpdate(PermissionRequiredMixin, generic.edit.UpdateView):
             year_after = year + 1
 
         if self.request.method == 'POST':
-            proofForm = ProofForm(self.request.POST, self.request.FILES, prefix='proofForm')
+            proofForm = ProofForm(self.request.POST, self.request.FILES)
             suaForm = SuaForm(
                 self.request.POST,
                 prefix='suaForm',
@@ -615,48 +615,54 @@ class GSuaPublicityCreate(PermissionRequiredMixin, generic.edit.CreateView):
 
     def form_valid(self, form):
         context = self.get_context_data()
-        if context['proofForm'].is_valid() and\
-                context['sua_ApplicationForm'].is_valid():
-            if context['proofForm'].cleaned_data['is_offline']:
-                offlineProofSet = Proof.objects.filter(is_offline=True)
-                if offlineProofSet.count == 0:
-                    assert(User.objects.filter(is_superuser=True).count != 0)
-                    proof = Proof.objects.create(
-                        user=User.objects.filter(is_superuser=True)[0],
-                        date=timezone.now(),
-                        is_offline=True,
-                    )
-                    proof.save()
-                else:
-                    proof = offlineProofSet[0]
-            else:
-                proof = context['proofForm'].save(commit=False)
-            sua = form.save(commit=False)
-            sua_Application = context['sua_ApplicationForm'].save(commit=False)
-            # 处理proof
-            if not context['proofForm'].cleaned_data['is_offline']:
-                proof.user = self.request.user
-                proof.date = timezone.now()
-                proof.save()
-            # 处理sua
-            sua.student = self.stu
-            sua.last_time_suahours = 0.0
-            sua.is_valid = True
-            sua.save()
-            # 处理sua_Application
-            sua_Application.sua = sua
-            sua_Application.date = timezone.now()
-            sua_Application.proof = proof
-            sua_Application.is_checked = True
-            sua_Application.save()
-            self.success_url = reverse('sua:application-detail', kwargs={'pk': sua_Application.pk})
+        usr = self.request.user
+        date = form.cleaned_data['date']
+        if usr.is_superuser:
+            group = SuaGroup.objects.get(pk=2)
         else:
-            self.form_invalid()
-        return super(Sua_ApplicationCreate, self).form_valid(form)
+            group = (usr.groups.order_by('-rank').first).suagroup
+        suas = []
+        gsuap = form.save(commit=False)
+        if context['formset'].is_valid():
+            for suaform in context['formset']:
+                if suaform.cleaned_data != {}:
+                    sua = suaform.save(commit=False)
+                    sua.group = group
+                    sua.title = gsuap.title
+                    sua.date = date
+                    sua.last_time_suahours = 0.0
+                    sua.is_valid = True
+                    sua.save()
+                    suas.append(sua)
+            gsua = GSua.objects.create(title=gsuap.title, group=group, date=date, is_valid=True)
+            for sua in suas:
+                gsua.suas.add(sua)
+            gsua.save()
+            gsuap.gsua = gsua
+            gsuap.user = usr
+            gsuap.save()
+            self.success_url = reverse('sua:gsuap-detail', kwargs={'pk': gsuap.pk})
+        else:
+            self.form_invalid(form)
+        return super(GSuaPublicityCreate, self).form_valid(form)
 
     def get_context_data(self, **kwargs):
-        context = super(Sua_ApplicationCreate, self).get_context_data(**kwargs)
-        self.stu = get_object_or_404(Student, pk=self.args[0])
+        context = super(GSuaPublicityCreate, self).get_context_data(**kwargs)
+        SuaFormSet = modelformset_factory(
+            Sua, fields=('student', 'team', 'suahours'), extra=1,
+            widgets={
+                'student': forms.Select(attrs={
+                    'class': 'form-control'
+                }),
+                'team': forms.TextInput(attrs={
+                    'class': 'form-control'
+                }),
+                'suahours': forms.TextInput(attrs={
+                    'class': 'form-control',
+                    'placeholder': '请输入公益时数',
+                })
+            }
+        )
         date = timezone.now()
         year = date.year
         month = date.month
@@ -668,24 +674,12 @@ class GSuaPublicityCreate(PermissionRequiredMixin, generic.edit.CreateView):
             year_after = year + 1
 
         if self.request.method == 'POST':
-            proofForm = ProofForm(self.request.POST, self.request.FILES, prefix='proofForm')
-            sua_ApplicationForm = Sua_ApplicationForm(
-                self.request.POST,
-                prefix='sua_ApplicationForm',
-            )
+            formset = SuaFormSet(self.request.POST, self.request.FILES)
         else:
-            proofForm = ProofForm(prefix='proofForm')
-            sua_ApplicationForm = Sua_ApplicationForm(
-                prefix='sua_ApplicationForm',
-            )
-        context['suaForm'] = context['form']
-        context['proofForm'] = proofForm
-        context['sua_ApplicationForm'] = sua_ApplicationForm
-        context['apply_date'] = date.date()
+            formset = SuaFormSet(queryset=Sua.objects.none())
+        context['formset'] = formset
         context['apply_year_before'] = year_before
         context['apply_year_after'] = year_after
-        context['stu_name'] = self.stu.name
-        context['stu_number'] = self.stu.number
         return context
 
 
