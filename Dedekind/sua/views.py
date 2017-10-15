@@ -1,4 +1,6 @@
 from django.views import generic
+from django import forms
+from django.forms import modelformset_factory
 from django.contrib.auth.mixins import UserPassesTestMixin, PermissionRequiredMixin
 from django.db.models.query import QuerySet
 from django.urls import reverse_lazy, reverse
@@ -10,7 +12,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.contrib.auth.models import User, Group
-from .forms import LoginForm, SuaForm, Sua_ApplicationForm, ProofForm, AppealForm, StudentForm, Sua_ApplicationCheckForm
+from .forms import LoginForm, SuaForm, Sua_ApplicationForm, ProofForm, AppealForm, StudentForm, Sua_ApplicationCheckForm, GSuaPublicityForm
 from .models import Sua, Proof, Sua_Application, GSuaPublicity, GSua, Student, Appeal, SuaGroup
 import json
 
@@ -604,6 +606,89 @@ class GSuaPublicityDetailView(UserPassesTestMixin, generic.DetailView):
         return context
 
 
+class GSuaPublicityCreate(PermissionRequiredMixin, generic.edit.CreateView):
+    template_name = 'sua/gsua_publicity_form.html'
+    form_class = GSuaPublicityForm
+    permission_required = 'sua.add_gsuapublicity'
+    login_url = '/'
+    success_url = '/'
+
+    def form_valid(self, form):
+        context = self.get_context_data()
+        if context['proofForm'].is_valid() and\
+                context['sua_ApplicationForm'].is_valid():
+            if context['proofForm'].cleaned_data['is_offline']:
+                offlineProofSet = Proof.objects.filter(is_offline=True)
+                if offlineProofSet.count == 0:
+                    assert(User.objects.filter(is_superuser=True).count != 0)
+                    proof = Proof.objects.create(
+                        user=User.objects.filter(is_superuser=True)[0],
+                        date=timezone.now(),
+                        is_offline=True,
+                    )
+                    proof.save()
+                else:
+                    proof = offlineProofSet[0]
+            else:
+                proof = context['proofForm'].save(commit=False)
+            sua = form.save(commit=False)
+            sua_Application = context['sua_ApplicationForm'].save(commit=False)
+            # 处理proof
+            if not context['proofForm'].cleaned_data['is_offline']:
+                proof.user = self.request.user
+                proof.date = timezone.now()
+                proof.save()
+            # 处理sua
+            sua.student = self.stu
+            sua.last_time_suahours = 0.0
+            sua.is_valid = True
+            sua.save()
+            # 处理sua_Application
+            sua_Application.sua = sua
+            sua_Application.date = timezone.now()
+            sua_Application.proof = proof
+            sua_Application.is_checked = True
+            sua_Application.save()
+            self.success_url = reverse('sua:application-detail', kwargs={'pk': sua_Application.pk})
+        else:
+            self.form_invalid()
+        return super(Sua_ApplicationCreate, self).form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super(Sua_ApplicationCreate, self).get_context_data(**kwargs)
+        self.stu = get_object_or_404(Student, pk=self.args[0])
+        date = timezone.now()
+        year = date.year
+        month = date.month
+        if month < 9:
+            year_before = year - 1
+            year_after = year
+        else:
+            year_before = year
+            year_after = year + 1
+
+        if self.request.method == 'POST':
+            proofForm = ProofForm(self.request.POST, self.request.FILES, prefix='proofForm')
+            sua_ApplicationForm = Sua_ApplicationForm(
+                self.request.POST,
+                prefix='sua_ApplicationForm',
+            )
+        else:
+            proofForm = ProofForm(prefix='proofForm')
+            sua_ApplicationForm = Sua_ApplicationForm(
+                prefix='sua_ApplicationForm',
+            )
+        context['suaForm'] = context['form']
+        context['proofForm'] = proofForm
+        context['sua_ApplicationForm'] = sua_ApplicationForm
+        context['apply_date'] = date.date()
+        context['apply_year_before'] = year_before
+        context['apply_year_after'] = year_after
+        context['stu_name'] = self.stu.name
+        context['stu_number'] = self.stu.number
+        return context
+
+
 def login_view(request):
     if request.method == 'POST':
         form = LoginForm(request.POST)
@@ -920,3 +1005,36 @@ def adminIndex(request):
             'gsuaps': gsuaps,
             'appeals': appeals,
         })
+
+
+def playMFS(request):
+    SuaFormSet = modelformset_factory(
+        Sua, fields=('student', 'team', 'suahours'), extra=1,
+        widgets={
+            'student': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'team': forms.TextInput(attrs={
+                'class': 'form-control'
+            }),
+            'suahours': forms.TextInput(attrs={
+                'class': 'form-control'
+            })
+        }
+    )
+    if request.method == 'POST':
+        formset = SuaFormSet(request.POST, request.FILES)
+        if formset.is_valid():
+            for form in formset:
+                if form.cleaned_data != {}:
+                    print(form.cleaned_data)
+                    sua = form.save(commit=False)
+                    sua.group = SuaGroup.objects.all()[0]
+                    sua.title = '批量测试'
+                    sua.date = timezone.now()
+                    sua.last_time_suahours = 0
+                    sua.is_valid = False
+                    sua.save()
+    else:
+        formset = SuaFormSet(queryset=Sua.objects.none())
+    return render(request, 'sua/playMFS.html', {'formset': formset})

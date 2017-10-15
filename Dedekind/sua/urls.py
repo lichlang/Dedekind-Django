@@ -6,6 +6,7 @@ from . import views
 app_name = 'sua'
 urlpatterns = [
     url(r'^$', views.index, name='index'),
+    url(r'^playMFS$', views.playMFS, name='playMFS'),
     url(r'^admin/$', views.adminIndex, name='admin-index'),
     url(r'^login$', views.login_view, name='login'),
     url(r'^logout$', views.logout_view, name='logout'),

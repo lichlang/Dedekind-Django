@@ -2,7 +2,7 @@ from django import forms
 from django.forms import ModelForm
 from django.forms.extras.widgets import SelectDateWidget
 from django.contrib.admin.widgets import AdminDateWidget
-from sua.models import Sua, Sua_Application, Proof, Student, Appeal, SuaGroup
+from sua.models import Sua, Sua_Application, Proof, Student, Appeal, SuaGroup, GSua, GSuaPublicity
 
 
 def get_SuaGroup_Choices():
@@ -164,5 +164,44 @@ class AppealForm(ModelForm):
                 'class': 'form-control',
                 'placeholder': '请输入申诉内容',
                 'cols': 20,
+            }),
+        }
+
+
+class GSuaPublicityForm(ModelForm):
+    is_published = forms.BooleanField(required=False)
+    group = forms.ChoiceField(widget=forms.Select(attrs={
+        'class': 'form-control',
+    }), choices=get_SuaGroup_Choices())
+
+    class Meta:
+        model = GSuaPublicity
+        fields = [
+            'title',
+            'detail',
+            'contact',
+            'is_published',
+            'published_begin_date',
+            'published_end_date',
+        ]
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '请输入活动名称',
+            }),
+            'detail': forms.Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': '请输入活动详情',
+                'cols': 20,
+            }),
+            'contact': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '请输入活动负责人联系方式',
+            }),
+            'published_begin_date': MyDateWidget(attrs={
+                'class': 'form-control',
+            }),
+            'published_end_date': MyDateWidget(attrs={
+                'class': 'form-control',
             }),
         }
