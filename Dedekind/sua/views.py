@@ -683,6 +683,93 @@ class GSuaPublicityCreate(PermissionRequiredMixin, generic.edit.CreateView):
         return context
 
 
+class GSuaPublicityUpdate(PermissionRequiredMixin, generic.edit.UpdateView):
+    template_name = 'sua/gsua_publicity_form.html'
+    form_class = GSuaPublicityForm
+    permission_required = 'sua.change_gsuapublicity'
+    login_url = '/'
+    success_url = '/'
+
+    def get_queryset(self):
+        return GSuaPublicity.objects.all()
+
+    def form_valid(self, form):
+        context = self.get_context_data()
+        usr = self.request.user
+        date = form.cleaned_data['date']
+        group = self.get_object().gsua.group
+        suas = []
+        gsuap = form.save(commit=False)
+        if context['formset'].is_valid():
+            for suaform in context['formset']:
+                if suaform.cleaned_data != {}:
+                    sua = suaform.save(commit=False)
+                    sua.group = group
+                    sua.title = gsuap.title
+                    sua.date = date
+                    sua.is_valid = True
+                    sua.save()
+                    suas.append(sua)
+            gsua = self.get_object().gsua
+            for sua in gsua.suas.all():
+                if sua not in suas:
+                    gsua.suas.remove(sua)
+                    sua.delete()
+            for sua in suas:
+                if sua not in gsua.suas.all():
+                    gsua.suas.add(sua)
+            gsua.title = gsuap.title
+            gsua.date = date
+            gsua.save()
+            self.success_url = reverse('sua:gsuap-detail', kwargs={'pk': self.get_object().pk})
+        else:
+            print('invalid')
+            self.form_invalid(form)
+        return super(GSuaPublicityUpdate, self).form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super(GSuaPublicityUpdate, self).get_context_data(**kwargs)
+        SuaFormSet = modelformset_factory(
+            Sua, fields=('student', 'team', 'suahours'), extra=0,
+            widgets={
+                'student': forms.Select(attrs={
+                    'class': 'form-control'
+                }),
+                'team': forms.TextInput(attrs={
+                    'class': 'form-control'
+                }),
+                'suahours': forms.TextInput(attrs={
+                    'class': 'form-control',
+                    'placeholder': '请输入公益时数',
+                })
+            }
+        )
+        gsuap = self.get_object()
+        date = gsuap.published_begin_date
+        year = date.year
+        month = date.month
+        if month < 9:
+            year_before = year - 1
+            year_after = year
+        else:
+            year_before = year
+            year_after = year + 1
+
+        if self.request.method == 'POST':
+            formset = SuaFormSet(self.request.POST, self.request.FILES)
+        else:
+            formset = SuaFormSet(queryset=gsuap.gsua.suas.all())
+        context['formset'] = formset
+        context['apply_year_before'] = year_before
+        context['apply_year_after'] = year_after
+        return context
+
+    def get_initial(self):
+        initial = super(GSuaPublicityUpdate, self).get_initial()
+        initial['date'] = self.get_object().gsua.date
+        return initial
+
+
 def login_view(request):
     if request.method == 'POST':
         form = LoginForm(request.POST)

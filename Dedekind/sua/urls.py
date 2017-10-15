@@ -102,4 +102,9 @@ urlpatterns = [
         login_required(views.GSuaPublicityCreate.as_view()),
         name='gsuap-add',
     ),
+    url(
+        r'^gsuap/(?P<pk>[0-9]+)/update$',
+        login_required(views.GSuaPublicityUpdate.as_view()),
+        name='gsuap-update',
+    ),
 ]
