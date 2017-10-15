@@ -67,6 +67,7 @@
 
                       <!-- 这个部分用来展示后台提供的数据 -->
                         <p>{{ students }}</p>  <!-- 全体学生(student)列表 -->
+                        <p><a href={% url 'sua:student-list-json' %}>StudentList API</a></p>
                         <p>{{ gsuaps }}</p>  <!-- 全体公示(gsuap)列表（gsuap.gsua就是公示对应的gsua) -->
                         <p>{{ appeals }}</p>  <!-- 全体申诉(appeal)列表 -->
                       <!-- 本页面完成时记得删掉这部分代码哟 -->

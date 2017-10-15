@@ -60,7 +60,7 @@
   	  	<hr>
  	  	<div class="row">
  	  	<div class="col-xs-12">
-  	  		<form enctype="multipart/form-data" role="form" action="{% url 'sua:index' %}" method="GET">
+  	  		<form enctype="multipart/form-data" role="form" action="" method="POST">
             {% csrf_token %}
   	  			<div class="row">
 					<div class="col-md-6">
@@ -185,27 +185,26 @@
   	  				<div class="col-lg-12">
   	  				<div class="form-group">
   	  					<label for="id_{{ proofForm.prefix }}-{{ proofForm.proof_file.name }}">
-  	  					审核结果
+  	  					是否通过审核
   	  					</label>
-                {% if sa.is_checked %}
-                  {% if sa.sua.is_valid %}
-                    <p id="" class="form-control-static">审核通过</p>
-                  {% else %}
-                    <textarea name="sua_ApplicationForm-detail" placeholder="{{ sa.feedback }}" maxlength="400" rows="10" id="" cols="20" class="form-control" readonly></textarea>
-                  {% endif %}
-                {% else %}
-                  <p id="" class="form-control-static">待审核</p>
-                {% endif %}
+                {{ form.is_passed }}
   	  				</div>
   	  				</div>
-  	  				<div class="col-lg-6">
-
+  	  			</div>
+            <div class="row">
+  	  				<div class="col-lg-12">
+  	  				<div class="form-group">
+  	  					<label for="id_{{ proofForm.prefix }}-{{ proofForm.proof_file.name }}">
+  	  					不通过的理由
+  	  					</label>
+                {{ form.feedback }}
+  	  				</div>
   	  				</div>
   	  			</div>
   	  			<hr>
 				<div class="row">
 					<div class="col-lg-12">
-						<a class="btn btn-block btn-default" href='/'>返回</a>
+						<button type="submit" class="btn btn-block">确认审核结果</button>
 					</div>
 					</div>
   	  			</form>

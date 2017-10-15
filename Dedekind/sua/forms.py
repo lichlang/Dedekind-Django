@@ -2,7 +2,25 @@ from django import forms
 from django.forms import ModelForm
 from django.forms.extras.widgets import SelectDateWidget
 from django.contrib.admin.widgets import AdminDateWidget
-from sua.models import Sua, Sua_Application, Proof, Student, Appeal
+from sua.models import Sua, Sua_Application, Proof, Student, Appeal, SuaGroup, GSua, GSuaPublicity
+
+
+def get_SuaGroup_Choices():
+    suaGroups = SuaGroup.objects.order_by('rank')
+    suaGroup_Choices = []
+    for suaGroup in suaGroups:
+        suaGroup_Choices.append((suaGroup.pk, suaGroup.name))
+    return suaGroup_Choices
+
+
+class MyDateWidget(AdminDateWidget):
+    def format_value(self, value):
+        old_value = super(MyDateWidget, self).format_value(value)
+        if old_value is None:
+            return old_value
+        dates = old_value.split('/')
+        new_value = '-'.join(dates)
+        return new_value
 
 
 class LoginForm(forms.Form):
@@ -15,6 +33,44 @@ class LoginForm(forms.Form):
         widget=forms.PasswordInput(attrs={'class': 'text_box'})
     )
     loginstatus = forms.BooleanField(required=False)
+
+
+class StudentForm(ModelForm):
+    initial_password = forms.CharField(widget=forms.TextInput(attrs={
+        'class': 'form-control',
+        'placeholder': '请输入新的初始密码',
+    }), required=False)
+    group = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple(attrs={
+        'class': 'checkbox-inline',
+    }), choices=get_SuaGroup_Choices())
+
+    class Meta:
+        model = Student
+
+        fields = [
+            'number',
+            'name',
+            'grade',
+            'suahours',
+        ]
+        widgets = {
+            'number': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '请输入学生学号（这将会作为学生的用户名）',
+            }),
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '请输入学生姓名',
+            }),
+            'suahours': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '请输入学生当前的公益时数',
+            }),
+            'grade': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '请输入学生年级(如2017级)',
+            }),
+        }
 
 
 class SuaForm(ModelForm):
@@ -38,7 +94,7 @@ class SuaForm(ModelForm):
             'team': forms.TextInput(attrs={
                 'class': 'form-control',
             }),
-            'date': AdminDateWidget(attrs={
+            'date': MyDateWidget(attrs={
                 'class': 'form-control',
             }),
             'suahours': forms.TextInput(attrs={
@@ -80,6 +136,23 @@ class Sua_ApplicationForm(ModelForm):
         }
 
 
+class Sua_ApplicationCheckForm(ModelForm):
+    is_passed = forms.BooleanField(required=False)
+    feedback = forms.CharField(required=False, widget=forms.Textarea(attrs={
+        'class': 'form-control',
+        'placeholder': '请写下公益时申请不通过的理由。',
+        'cols': 20,
+    }))
+
+    class Meta:
+        model = Sua_Application
+        fields = [
+            'feedback',
+        ]
+        widgets = {
+        }
+
+
 class AppealForm(ModelForm):
     class Meta:
         model = Appeal
@@ -91,5 +164,44 @@ class AppealForm(ModelForm):
                 'class': 'form-control',
                 'placeholder': '请输入申诉内容',
                 'cols': 20,
+            }),
+        }
+
+
+class GSuaPublicityForm(ModelForm):
+    is_published = forms.BooleanField(required=False)
+    date = forms.DateTimeField(widget=MyDateWidget(attrs={
+        'class': 'form-control'
+    }))
+
+    class Meta:
+        model = GSuaPublicity
+        fields = [
+            'title',
+            'detail',
+            'contact',
+            'is_published',
+            'published_begin_date',
+            'published_end_date',
+        ]
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '请输入活动名称',
+            }),
+            'detail': forms.Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': '请输入活动详情',
+                'cols': 20,
+            }),
+            'contact': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '请输入活动负责人联系方式',
+            }),
+            'published_begin_date': MyDateWidget(attrs={
+                'class': 'form-control',
+            }),
+            'published_end_date': MyDateWidget(attrs={
+                'class': 'form-control',
             }),
         }

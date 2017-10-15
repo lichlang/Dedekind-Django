@@ -1,4 +1,5 @@
 from django.db import models
+from django.urls import reverse
 from django.contrib.auth.models import User, Group
 from django.utils.translation import ugettext as _
 from sua.storage import FileStorage
@@ -17,7 +18,7 @@ class Student(models.Model):
         primary_key=True,
     )
     number = models.IntegerField(_("Student Number"))
-    suahours = models.FloatField()
+    suahours = models.FloatField(default=0)
     name = models.CharField(max_length=100)
     grade = models.IntegerField(
         _("Student Grade"),
@@ -28,12 +29,20 @@ class Student(models.Model):
     def __str__(self):
         return self.name
 
+    def get_absolute_url(self):
+        return reverse('sua:student-detail', kwargs={'pk': self.pk})
+
 
 class SuaGroup(models.Model):
-    group = models.ForeignKey(Group, on_delete=models.CASCADE)
+    group = models.OneToOneField(
+        Group,
+        on_delete=models.CASCADE,
+        primary_key=True,
+    )
     name = models.CharField(max_length=100)
     is_staff = models.BooleanField(default=False)
     contact = models.CharField(max_length=100, blank=True)
+    rank = models.IntegerField(blank=True)
 
     def __str__(self):
         if self.is_staff:
@@ -47,7 +56,7 @@ class Sua(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     group = models.ForeignKey(SuaGroup, on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
-    team = models.CharField(max_length=200, default="无分组")
+    team = models.CharField(max_length=200)
     date = models.DateTimeField('活动日期')
     suahours = models.FloatField()
     last_time_suahours = models.FloatField(default=0.0)
@@ -125,7 +134,7 @@ class GSuaPublicity(models.Model):
     detail = models.CharField(max_length=400)
     contact = models.CharField(max_length=100, blank=True)
     is_published = models.BooleanField(default=False)
-    published_begin_date = models.DateTimeField('开始公示时间')
+    published_begin_date = models.DateTimeField('开始公示时间', default=datetime.datetime.now())
     published_end_date = models.DateTimeField('结束公示时间')
 
     def __str__(self):
