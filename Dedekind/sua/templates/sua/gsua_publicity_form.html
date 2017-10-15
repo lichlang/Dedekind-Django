@@ -105,13 +105,18 @@
               {% for suaform in formset %}
               {{ suaform.id }}
               <div class="row">
-      				<div class="col-lg-4">
+              <div class="col-lg-3">
+              <div class="form-group-inline">
+                <label>{{ suaform.DELETE }}删除该学生</label>
+              </div>
+              </div>
+      				<div class="col-lg-3">
                       {{ suaform.student }}
       				</div>
-              <div class="col-lg-4">
+              <div class="col-lg-3">
                       {{ suaform.team }}
       				</div>
-              <div class="col-lg-4">
+              <div class="col-lg-3">
                       {{ suaform.suahours }}
       				</div>
       				</div>

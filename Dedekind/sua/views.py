@@ -702,7 +702,7 @@ class GSuaPublicityUpdate(PermissionRequiredMixin, generic.edit.UpdateView):
         gsuap = form.save(commit=False)
         if context['formset'].is_valid():
             for suaform in context['formset']:
-                if suaform.cleaned_data != {}:
+                if suaform.cleaned_data != {} and (not suaform.cleaned_data['DELETE']):
                     sua = suaform.save(commit=False)
                     sua.group = group
                     sua.title = gsuap.title
@@ -714,10 +714,13 @@ class GSuaPublicityUpdate(PermissionRequiredMixin, generic.edit.UpdateView):
             for sua in gsua.suas.all():
                 if sua not in suas:
                     gsua.suas.remove(sua)
+                    sua.is_valid = False
+                    sua.save()
                     sua.delete()
             for sua in suas:
                 if sua not in gsua.suas.all():
                     gsua.suas.add(sua)
+
             gsua.title = gsuap.title
             gsua.date = date
             gsua.save()
@@ -730,7 +733,7 @@ class GSuaPublicityUpdate(PermissionRequiredMixin, generic.edit.UpdateView):
     def get_context_data(self, **kwargs):
         context = super(GSuaPublicityUpdate, self).get_context_data(**kwargs)
         SuaFormSet = modelformset_factory(
-            Sua, fields=('student', 'team', 'suahours'), extra=0,
+            Sua, fields=('student', 'team', 'suahours'), extra=0, can_delete=True,
             widgets={
                 'student': forms.Select(attrs={
                     'class': 'form-control'
@@ -741,7 +744,11 @@ class GSuaPublicityUpdate(PermissionRequiredMixin, generic.edit.UpdateView):
                 'suahours': forms.TextInput(attrs={
                     'class': 'form-control',
                     'placeholder': '请输入公益时数',
-                })
+                }),
+                'DELETE': forms.CheckboxInput(attrs={
+                    'class': 'checkbox',
+                    'placeholder': '请输入公益时数',
+                }),
             }
         )
         gsuap = self.get_object()
