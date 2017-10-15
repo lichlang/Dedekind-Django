@@ -15,13 +15,16 @@
   <script src="{% static 'sua/js/bootstrap.js' %}"></script>
   <script type="text/html" id="sua-template">
   <div id="sua-__prefix__" class="row">
-  <div class="col-lg-4">
+    <div class="col-lg-3">
+      <label>新学生</label>
+    </div>
+  <div class="col-lg-3">
           {{ formset.empty_form.student }}
   </div>
-  <div class="col-lg-4">
+  <div class="col-lg-3">
           {{ formset.empty_form.team }}
   </div>
-  <div class="col-lg-4">
+  <div class="col-lg-3">
           {{ formset.empty_form.suahours }}
   </div>
   </div>

@@ -107,4 +107,9 @@ urlpatterns = [
         login_required(views.GSuaPublicityUpdate.as_view()),
         name='gsuap-update',
     ),
+    url(
+        r'^gsua/(?P<pk>[0-9]+)/delete$',
+        login_required(views.GSuaDelete.as_view()),
+        name='gsua-delete',
+    ),
 ]

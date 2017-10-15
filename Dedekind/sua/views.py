@@ -649,7 +649,7 @@ class GSuaPublicityCreate(PermissionRequiredMixin, generic.edit.CreateView):
     def get_context_data(self, **kwargs):
         context = super(GSuaPublicityCreate, self).get_context_data(**kwargs)
         SuaFormSet = modelformset_factory(
-            Sua, fields=('student', 'team', 'suahours'), extra=1,
+            Sua, fields=('student', 'team', 'suahours'), extra=0,
             widgets={
                 'student': forms.Select(attrs={
                     'class': 'form-control'
@@ -775,6 +775,13 @@ class GSuaPublicityUpdate(PermissionRequiredMixin, generic.edit.UpdateView):
         initial = super(GSuaPublicityUpdate, self).get_initial()
         initial['date'] = self.get_object().gsua.date
         return initial
+
+
+class GSuaDelete(PermissionRequiredMixin, generic.edit.DeleteView):
+    model = GSua
+    success_url = reverse_lazy('sua:admin-index')
+    permission_required = 'sua.delete_gsua'
+    login_url = '/'
 
 
 def login_view(request):
