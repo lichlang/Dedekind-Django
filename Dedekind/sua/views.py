@@ -98,6 +98,31 @@ class JSONSuaApplicationView(JSONListView):
         return json_context
 
 
+class JSONStudentGroupListView(JSONListView):
+    """
+    查询单个Student对应的SuaGroup的JSON API
+    """
+    def is_itself(self):
+        usr = self.request.user
+        return hasattr(usr, 'student') and usr.student == self.student
+
+    def get_queryset(self):
+        self.student = get_object_or_404(Student, pk=self.args[0])
+        return self.student.user.groups.all()
+
+    def get_context_data(self, **kwargs):
+        context = super(JSONStudentGroupListView, self).get_context_data(**kwargs)
+        usr = self.request.user
+        json_context = {}
+        if usr.is_superuser or self.is_itself():
+            json_context['res'] = "success"
+            json_context['msg'] = {'suagroup_list': context['object_list']}
+        else:
+            json_context['res'] = "failure"
+            json_context['msg'] = None
+        return json_context
+
+
 class JSONStudentListView(JSONListView):
     """
     查询Student列表的JSON API
@@ -204,22 +229,47 @@ class JSONSuaGSuaListView(JSONListView):
         return json_context
 
 
-class JSONAppealListView(JSONListView):
+class JSONSuaGroupAppealListView(JSONListView):
     """
-    查询某一Sua的GSua列表的JSON API
+    查询某一SuaGroup的Appeal列表的JSON API
     """
 
     def get_queryset(self):
-        self.sua = get_object_or_404(Sua, pk=self.args[0])
-        return self.sua.gsua_set.all()
+        usr = self.request.user
+        self.group = get_object_or_404(SuaGroup, pk=self.args[0])
+        appeals = QuerySet()
+        if usr.is_superuser or self.group.group in usr.groups.all():
+            appeals = Appeal.objects.filter(gsua__group=self.group)
+        return appeals
 
     def get_context_data(self, **kwargs):
-        context = super(JSONSuaGSuaListView, self).get_context_data(**kwargs)
+        context = super(JSONSuaGroupAppealListView, self).get_context_data(**kwargs)
+        usr = self.request.user
+        json_context = {}
+        if usr.is_superuser or self.group.group in usr.groups.all():
+            json_context['res'] = "success"
+            json_context['msg'] = {'appeal_list': context['object_list']}
+        else:
+            json_context['res'] = "failure"
+            json_context['msg'] = None
+        return json_context
+
+
+class JSONSuaGroupListView(JSONListView):
+    """
+    查询全体SuaGroup的JSON API
+    """
+
+    def get_queryset(self):
+        return SuaGroup.objects.all()
+
+    def get_context_data(self, **kwargs):
+        context = super(JSONSuaGroupListView, self).get_context_data(**kwargs)
         usr = self.request.user
         json_context = {}
         if usr.is_superuser:
             json_context['res'] = "success"
-            json_context['msg'] = {'gsua': context['object_list']}
+            json_context['msg'] = {'suagroup_list': context['object_list']}
         else:
             json_context['res'] = "failure"
             json_context['msg'] = None

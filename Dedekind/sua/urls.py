@@ -23,6 +23,11 @@ urlpatterns = [
         name='student-sualist-json',
     ),
     url(
+        r'^student/([0-9]+)/grouplist$',
+        login_required(views.JSONStudentGroupListView.as_view()),
+        name='student-grouplist-json',
+    ),
+    url(
         r'^sua/([0-9]+)/application$',
         login_required(views.JSONSuaApplicationView.as_view()),
         name='sua-application-json',
@@ -46,6 +51,16 @@ urlpatterns = [
         r'^gsua/([0-9]+)/sualist$',
         login_required(views.JSONGSuaSuaListView.as_view()),
         name='gsua-sualist-json',
+    ),
+    url(
+        r'^suagroup/([0-9]+)/appeallist$',
+        login_required(views.JSONSuaGroupAppealListView.as_view()),
+        name='suagroup-appeallist-json',
+    ),
+    url(
+        r'^suagroup/list$',
+        login_required(views.JSONSuaGroupListView.as_view()),
+        name='suagroup-list-json',
     ),
     url(
         r'^student/(?P<pk>[0-9]+)/$',
