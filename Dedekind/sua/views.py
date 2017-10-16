@@ -204,6 +204,28 @@ class JSONSuaGSuaListView(JSONListView):
         return json_context
 
 
+class JSONAppealListView(JSONListView):
+    """
+    查询某一Sua的GSua列表的JSON API
+    """
+
+    def get_queryset(self):
+        self.sua = get_object_or_404(Sua, pk=self.args[0])
+        return self.sua.gsua_set.all()
+
+    def get_context_data(self, **kwargs):
+        context = super(JSONSuaGSuaListView, self).get_context_data(**kwargs)
+        usr = self.request.user
+        json_context = {}
+        if usr.is_superuser:
+            json_context['res'] = "success"
+            json_context['msg'] = {'gsua': context['object_list']}
+        else:
+            json_context['res'] = "failure"
+            json_context['msg'] = None
+        return json_context
+
+
 class StudentDetailView(UserPassesTestMixin, generic.DetailView):
     """
     查询Student详情的View
@@ -620,7 +642,7 @@ class GSuaPublicityCreate(PermissionRequiredMixin, generic.edit.CreateView):
         if usr.is_superuser:
             group = SuaGroup.objects.get(pk=2)
         else:
-            group = (usr.groups.order_by('-rank').first()).suagroup
+            group = (usr.groups.order_by('-suagroup__rank').first()).suagroup
         suas = []
         gsuap = form.save(commit=False)
         if context['formset'].is_valid():
