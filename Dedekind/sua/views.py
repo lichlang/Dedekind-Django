@@ -620,7 +620,7 @@ class GSuaPublicityCreate(PermissionRequiredMixin, generic.edit.CreateView):
         if usr.is_superuser:
             group = SuaGroup.objects.get(pk=2)
         else:
-            group = (usr.groups.order_by('-rank').first).suagroup
+            group = (usr.groups.order_by('-rank').first()).suagroup
         suas = []
         gsuap = form.save(commit=False)
         if context['formset'].is_valid():

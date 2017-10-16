@@ -32,6 +32,7 @@ ALLOWED_HOSTS = [
     '192.168.1.101',
     'linouzan.oicp.io',
     'projectdedekind.imwork.net',
+    '172.16.19.130',
 ]
 
 
