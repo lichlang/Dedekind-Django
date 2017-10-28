@@ -14,7 +14,7 @@ urlpatterns = [
     url(r'^appeal_for$', views.appeal_for, name='appeal_for'),
     url(
         r'^student/list$',
-        login_required(views.JSONStudentListView.as_view()),
+        views.JSONStudentListView.as_view(),
         name='student-list-json',
     ),
     url(

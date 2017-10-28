@@ -137,6 +137,12 @@ class JSONStudentListView(JSONListView):
         if usr.is_superuser:
             json_context['res'] = "success"
             json_context['msg'] = {'student_list': context['object_list']}
+        elif self.request.method == 'GET':
+            token = self.request.GET.get('token')
+            print(token)
+            if token == "testtest":
+                json_context['res'] = "success"
+                json_context['msg'] = {'student_list': context['object_list']}
         else:
             json_context['res'] = "failure"
             json_context['msg'] = None

@@ -39,7 +39,9 @@ ALLOWED_HOSTS = [
 # Application definition
 
 INSTALLED_APPS = [
+    'sslserver',
     'sua.apps.SuaConfig',
+    'django_crontab',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -134,3 +136,7 @@ LOGIN_URL = '/login'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 MEDIA_URL = '/media/'
+
+CRONJOBS = [
+    ('*/2 * * * *', 'sua.cron.cleanNonce')
+]
