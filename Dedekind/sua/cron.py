@@ -1,8 +1,9 @@
 from sua.models import Nonce
+from .api import EXPIRE_TIME
 import time
 
 
-EXPIRE_TIME = 120
+
 
 
 def cleanNonce():

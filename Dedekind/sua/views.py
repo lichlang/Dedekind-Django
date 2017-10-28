@@ -14,6 +14,7 @@ from django.utils import timezone
 from django.contrib.auth.models import User, Group
 from .forms import LoginForm, SuaForm, Sua_ApplicationForm, ProofForm, AppealForm, StudentForm, Sua_ApplicationCheckForm, GSuaPublicityForm
 from .models import Sua, Proof, Sua_Application, GSuaPublicity, GSua, Student, Appeal, SuaGroup
+from .api import check_signature
 import json
 
 
@@ -134,15 +135,9 @@ class JSONStudentListView(JSONListView):
         context = super(JSONStudentListView, self).get_context_data(**kwargs)
         usr = self.request.user
         json_context = {}
-        if usr.is_superuser:
+        if usr.is_superuser or check_signature(self.request):
             json_context['res'] = "success"
             json_context['msg'] = {'student_list': context['object_list']}
-        elif self.request.method == 'GET':
-            token = self.request.GET.get('token')
-            print(token)
-            if token == "testtest":
-                json_context['res'] = "success"
-                json_context['msg'] = {'student_list': context['object_list']}
         else:
             json_context['res'] = "failure"
             json_context['msg'] = None

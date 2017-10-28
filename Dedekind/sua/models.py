@@ -171,6 +171,6 @@ class Nonce(models.Model):
     timestamp = models.IntegerField()
 
     def getSignature(self):
-        s = byte(str(self.nonce) + str(self.timestamp) + TOKEN, encoding='utf8')
+        s = bytes(str(self.nonce) + str(self.timestamp) + TOKEN, encoding='utf8')
         signature = hashlib.sha1(s).hexdigest()
         return signature
