@@ -4,7 +4,7 @@ import hashlib
 from token import TOKEN
 
 if __name__ == '__main__':
-    url = r"https://localhost:8000/student/list"
+    url = r"https://localhost:8000/student/2/sualist"
     nonce = str(random.randint(0, 2147483647))
     timestamp = str(int(time.time()))
     s = bytes(nonce + timestamp + TOKEN, encoding='utf8')

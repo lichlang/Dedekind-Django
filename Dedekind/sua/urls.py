@@ -19,7 +19,7 @@ urlpatterns = [
     ),
     url(
         r'^student/([0-9]+)/sualist$',
-        login_required(views.JSONStudentSuaListView.as_view()),
+        views.JSONStudentSuaListView.as_view(),
         name='student-sualist-json',
     ),
     url(

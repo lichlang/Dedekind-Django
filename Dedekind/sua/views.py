@@ -65,7 +65,7 @@ class JSONStudentSuaListView(JSONListView):
         context = super(JSONStudentSuaListView, self).get_context_data(**kwargs)
         usr = self.request.user
         json_context = {}
-        if usr.is_superuser or self.is_itself():
+        if usr.is_superuser or self.is_itself() or check_signature(self.request):
             json_context['res'] = "success"
             json_context['msg'] = {'sua_list': context['object_list']}
         else:
