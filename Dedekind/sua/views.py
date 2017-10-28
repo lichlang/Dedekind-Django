@@ -59,7 +59,7 @@ class JSONStudentSuaListView(JSONListView):
 
     def get_queryset(self):
         self.student = get_object_or_404(Student, pk=self.args[0])
-        return Sua.objects.filter(student=self.student, is_valid=True)
+        return Sua.objects.filter(student=self.student, is_valid=True).order_by('date')
 
     def get_context_data(self, **kwargs):
         context = super(JSONStudentSuaListView, self).get_context_data(**kwargs)
