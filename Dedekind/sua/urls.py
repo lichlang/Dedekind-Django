@@ -127,4 +127,9 @@ urlpatterns = [
         login_required(views.GSuaDelete.as_view()),
         name='gsua-delete',
     ),
+    url(
+        r'^appeal/(?P<pk>[0-9]+)/$',
+        login_required(views.AppealDetailView.as_view()),
+        name='appeal-detail',
+    ),
 ]
