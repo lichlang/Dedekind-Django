@@ -857,6 +857,46 @@ class GSuaDelete(PermissionRequiredMixin, generic.edit.DeleteView):
     login_url = '/'
 
 
+class AppealDetailView(UserPassesTestMixin, generic.DetailView):
+    """
+    查询Appeal详情的View
+    """
+    model = Appeal
+    template_name = 'sua/appeal_detail.html'
+    context_object_name = 'appealForm'
+    login_url = '/'
+
+    def test_func(self):
+        flag = False
+        usr = self.request.user
+        appeal = self.get_object()
+        if appeal.student.pk == usr.pk:
+            flag = True
+        return usr.is_superuser or flag
+
+    def get_queryset(self):
+        return Appeal.objects.all()
+
+    def get_context_data(self, **kwargs):
+        context = super(AppealDetailView, self).get_context_data(**kwargs)
+        appeal = self.get_object()
+        gsuap = appeal.gsua.gsuapublicity_set.first()
+
+        year = appeal.date.year
+        month = appeal.gsua.date.month
+        if month < 9:
+            year_before = year - 1
+            year_after = year
+        else:
+            year_before = year
+            year_after = year + 1
+
+        context['year_before'] = year_before
+        context['year_after'] = year_after
+        context['gsuap'] = gsuap
+        return context
+
+
 def login_view(request):
     if request.method == 'POST':
         form = LoginForm(request.POST)
