@@ -753,6 +753,8 @@ class GSuaPublicityCreate(PermissionRequiredMixin, generic.edit.CreateView):
         context['formset'] = formset
         context['apply_year_before'] = year_before
         context['apply_year_after'] = year_after
+        context['title'] = '创建新的公益时活动'
+        context['description'] = '您可以在这里创建新的公益时活动'
         return context
 
 
@@ -842,6 +844,8 @@ class GSuaPublicityUpdate(PermissionRequiredMixin, generic.edit.UpdateView):
         context['formset'] = formset
         context['apply_year_before'] = year_before
         context['apply_year_after'] = year_after
+        context['title'] = '修改公益时活动'
+        context['description'] = '您正在修改公益时活动'
         return context
 
     def get_initial(self):
