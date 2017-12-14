@@ -199,9 +199,9 @@ class GSuaPublicityForm(ModelForm):
                 'placeholder': '请输入活动负责人联系方式',
             }),
             'published_begin_date': MyDateWidget(attrs={
-                'class': 'form-control',
+                'class': 'date',
             }),
             'published_end_date': MyDateWidget(attrs={
-                'class': 'form-control',
+                'class': 'date',
             }),
         }
