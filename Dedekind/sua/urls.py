@@ -132,4 +132,15 @@ urlpatterns = [
         login_required(views.AppealDetailView.as_view()),
         name='appeal-detail',
     ),
+    url(
+        r'^appeal/(?P<pk>[0-9]+)/update$',
+        login_required(views.AppealUpdate.as_view()),
+        name='appeal-update',
+    ),
+    url(
+        r'^appeal/(?P<pk>[0-9]+)/check$',
+        login_required(views.AppealCheck.as_view()),
+        name='appeal-check',
+    ),
+
 ]

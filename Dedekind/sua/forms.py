@@ -168,6 +168,24 @@ class AppealForm(ModelForm):
         }
 
 
+class AppealCheckForm(ModelForm):
+    is_passed = forms.BooleanField(required=False),
+    feedback = forms.CharField(required=False, widget=forms.Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': '请写下公益时申请不通过的理由。',
+                'cols': 20,
+            })),
+
+    class Meta:
+        model = Appeal
+        fields = [
+            'is_passed',
+            'feedback',
+        ]
+        widgets = {
+        }
+
+
 class GSuaPublicityForm(ModelForm):
     is_published = forms.BooleanField(required=False)
     date = forms.DateTimeField(widget=MyDateWidget(attrs={

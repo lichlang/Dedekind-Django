@@ -12,7 +12,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.contrib.auth.models import User, Group
-from .forms import LoginForm, SuaForm, Sua_ApplicationForm, ProofForm, AppealForm, StudentForm, Sua_ApplicationCheckForm, GSuaPublicityForm
+from .forms import LoginForm, SuaForm, Sua_ApplicationForm, ProofForm, AppealForm, StudentForm, Sua_ApplicationCheckForm, GSuaPublicityForm, AppealCheckForm
 from .models import Sua, Proof, Sua_Application, GSuaPublicity, GSua, Student, Appeal, SuaGroup
 from .api import check_signature
 import json
@@ -901,6 +901,41 @@ class AppealDetailView(UserPassesTestMixin, generic.DetailView):
         return context
 
 
+class AppealUpdate(PermissionRequiredMixin, generic.edit.UpdateView):
+    template_name = 'sua/appeal_form.html'
+    form_class = AppealForm
+    model = Appeal
+    permission_required = 'sua.change_appeal'
+    login_url = '/'
+    success_url = '/'
+
+    def form_valid(self, form):
+        # 也许这个函数是用不着的.
+        appeal = get_object_or_404(Appeal, pk=form.instance.pk)
+        return super(AppealUpdate, self).form_valid(form)
+
+    def get_form_kwargs(self):
+        kwargs = super(AppealUpdate, self).get_form_kwargs()
+        kwargs['instance'] = self.get_object()
+        return kwargs
+
+
+class AppealCheck(PermissionRequiredMixin, generic.edit.UpdateView):
+    template_name = 'sua/appeal_check.html'
+    form_class = AppealCheckForm
+    permission_required = 'sua.change_appeal'
+    login_url = '/'
+    success_url = '/'
+
+    def get_queryset(self):
+        return Appeal.objects.all()
+
+    def form_valid(self, form):
+        self.appeal = self.get_object()
+        form.instance.is_checked = True
+        return super(AppealCheck, self).form_valid(form)
+    
+        
 def login_view(request):
     if request.method == 'POST':
         form = LoginForm(request.POST)
