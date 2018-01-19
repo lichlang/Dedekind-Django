@@ -1,6 +1,6 @@
 from django import forms
 from django.forms import ModelForm
-from django.forms.extras.widgets import SelectDateWidget
+# from django.forms.extras.widgets import SelectDateWidget
 from django.contrib.admin.widgets import AdminDateWidget
 from sua.models import Sua, Sua_Application, Proof, Student, Appeal, SuaGroup, GSua, GSuaPublicity
 
