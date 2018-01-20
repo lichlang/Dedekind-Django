@@ -58,7 +58,8 @@ class JSONStudentSuaListView(JSONListView):
         return hasattr(usr, 'student') and usr.student == self.student
 
     def get_queryset(self):
-        self.student = get_object_or_404(Student, pk=self.args[0])
+        # print(dir(self))
+        self.student = get_object_or_404(Student, pk=self.kwargs['pk'])
         return Sua.objects.filter(student=self.student, is_valid=True).order_by('date')
 
     def get_context_data(self, **kwargs):
@@ -83,7 +84,7 @@ class JSONSuaApplicationView(JSONListView):
         return hasattr(usr, 'student') and usr.student == self.sua.student
 
     def get_queryset(self):
-        self.sua = get_object_or_404(Sua, pk=self.args[0])
+        self.sua = get_object_or_404(Sua, pk=self.kwargs['pk'])
         return Sua_Application.objects.filter(sua=self.sua)
 
     def get_context_data(self, **kwargs):
@@ -108,7 +109,7 @@ class JSONStudentGroupListView(JSONListView):
         return hasattr(usr, 'student') and usr.student == self.student
 
     def get_queryset(self):
-        self.student = get_object_or_404(Student, pk=self.args[0])
+        self.student = get_object_or_404(Student, pk=self.kwargs['pk'])
         return self.student.user.groups.all()
 
     def get_context_data(self, **kwargs):
@@ -192,7 +193,7 @@ class JSONGSuaSuaListView(JSONListView):
     """
 
     def get_queryset(self):
-        self.gsua = get_object_or_404(GSua, pk=self.args[0])
+        self.gsua = get_object_or_404(GSua, pk=self.kwargs['pk'])
         return self.gsua.suas.all()
 
     def get_context_data(self, **kwargs):
@@ -214,7 +215,7 @@ class JSONSuaGSuaListView(JSONListView):
     """
 
     def get_queryset(self):
-        self.sua = get_object_or_404(Sua, pk=self.args[0])
+        self.sua = get_object_or_404(Sua, pk=self.kwargs['pk'])
         return self.sua.gsua_set.all()
 
     def get_context_data(self, **kwargs):
@@ -237,7 +238,7 @@ class JSONSuaGroupAppealListView(JSONListView):
 
     def get_queryset(self):
         usr = self.request.user
-        self.group = get_object_or_404(SuaGroup, pk=self.args[0])
+        self.group = get_object_or_404(SuaGroup, pk=self.kwargs['pk'])
         appeals = QuerySet()
         if usr.is_superuser or self.group.group in usr.groups.all():
             appeals = Appeal.objects.filter(gsua__group=self.group)
@@ -465,7 +466,7 @@ class Sua_ApplicationCreate(PermissionRequiredMixin, generic.edit.CreateView):
 
     def get_context_data(self, **kwargs):
         context = super(Sua_ApplicationCreate, self).get_context_data(**kwargs)
-        self.stu = get_object_or_404(Student, pk=self.args[0])
+        self.stu = get_object_or_404(Student, pk=self.kwargs['pk'])
         date = timezone.now()
         year = date.year
         month = date.month
@@ -934,8 +935,8 @@ class AppealCheck(PermissionRequiredMixin, generic.edit.UpdateView):
         self.appeal = self.get_object()
         form.instance.is_checked = True
         return super(AppealCheck, self).form_valid(form)
-    
-        
+
+
 def login_view(request):
     if request.method == 'POST':
         form = LoginForm(request.POST)
