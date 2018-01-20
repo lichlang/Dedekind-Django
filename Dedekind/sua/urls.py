@@ -1,5 +1,5 @@
-from django.conf.urls import url
-from django.urls import path, re_path
+# from django.conf.urls import url
+from django.urls import path
 from django.contrib.auth.decorators import login_required
 from . import views
 
