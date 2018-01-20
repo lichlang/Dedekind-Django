@@ -58,7 +58,7 @@ class JSONStudentSuaListView(JSONListView):
         return hasattr(usr, 'student') and usr.student == self.student
 
     def get_queryset(self):
-        print(dir(self))
+        # print(dir(self))
         self.student = get_object_or_404(Student, pk=self.kwargs['pk'])
         return Sua.objects.filter(student=self.student, is_valid=True).order_by('date')
 
